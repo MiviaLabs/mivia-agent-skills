@@ -1,0 +1,6 @@
+interface:
+  display_name: Engineering Working Contract
+  short_description: Evidence, autonomy, implementation, review, and verification rules for coding work
+  default_prompt: Apply the engineering working contract to this software engineering task.
+policy:
+  allow_implicit_invocation: true

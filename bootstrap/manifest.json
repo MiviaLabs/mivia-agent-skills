@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "version": "0.1.0",
+  "references": [
+    "contracts/engineering-agent-working-contract.md",
+    "doctrines/evidence-before-claims.md",
+    "doctrines/verification-is-part-of-delivery.md"
+  ],
+  "target_policy": {
+    "runtime_root": ".mivia-agent-skills",
+    "source_only": [
+      "articles/",
+      "docs/",
+      "examples/",
+      "scripts/",
+      "tooling/"
+    ]
+  }
+}

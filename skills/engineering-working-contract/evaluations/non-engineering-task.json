@@ -1,0 +1,12 @@
+{
+  "name": "unrelated personal writing does not activate the engineering contract",
+  "should_trigger": false,
+  "input": {
+    "request": "Write a short birthday message for a friend.",
+    "context": "No software engineering work is involved."
+  },
+  "expected_behavior": [
+    "do not invoke the engineering working contract",
+    "complete the writing request directly"
+  ]
+}

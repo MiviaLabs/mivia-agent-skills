@@ -1,0 +1,8 @@
+flowchart LR
+    A[Inspect evidence] --> B[Define done]
+    B --> C[Implement smallest complete change]
+    C --> D[Run focused verification]
+    D -->|Fails| A
+    D -->|Passes| E[Review diff and blast radius]
+    E -->|Issue found| C
+    E -->|Clean| F[Report outcome and residual risk]

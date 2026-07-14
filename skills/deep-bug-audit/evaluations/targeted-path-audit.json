@@ -1,0 +1,14 @@
+{
+  "name": "targeted security and persistence audit activates",
+  "should_trigger": true,
+  "input": {
+    "request": "Deep-audit src/auth and db/queries for authorization, scope, and persistence bugs. Do not fix anything.",
+    "context": "The target has direct API consumers, migration files, integration tests, and a documented lint command."
+  },
+  "expected_behavior": [
+    "stay within the named paths and their direct producers, consumers, tests, configs, and runtime surfaces",
+    "honor the audit-only constraint",
+    "trace at least one reachable failure path before promoting a finding",
+    "identify exact missing regressions and mutations that should fail"
+  ]
+}

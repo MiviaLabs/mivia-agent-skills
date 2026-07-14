@@ -1,0 +1,27 @@
+name: Release Skill Packages
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - run: python tooling/validate_repository.py
+      - run: python tooling/check_versions.py --tag "${GITHUB_REF_NAME}"
+      - run: python tooling/test_distribution.py
+      - run: python tooling/test_deep_bug_audit.py
+      - run: python tooling/test_packaging.py
+      - run: python scripts/package_claude_skills.py --output dist
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" dist/*.zip --generate-notes --verify-tag

@@ -1,0 +1,15 @@
+{
+  "name": "focused change passes relevant checks",
+  "should_trigger": true,
+  "input": {
+    "request": "Verify the parser bug fix before I open a pull request.",
+    "context": "The diff changes one parser function and adds a regression test. Unit tests and lint are available."
+  },
+  "expected_behavior": [
+    "inspect the changed behavior and diff",
+    "run the focused regression test first",
+    "run relevant lint or package tests if justified",
+    "report only checks that were actually executed",
+    "return PASS only when required checks succeed"
+  ]
+}
