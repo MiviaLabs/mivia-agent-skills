@@ -1,0 +1,6 @@
+interface:
+  display_name: Verify Code Change
+  short_description: Verify code and configuration changes according to risk and blast radius
+  default_prompt: Verify this change and report the executed scope, evidence, result, and remaining risk.
+policy:
+  allow_implicit_invocation: true

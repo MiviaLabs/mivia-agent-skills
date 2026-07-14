@@ -1,0 +1,6 @@
+interface:
+  display_name: "Deep Bug Audit"
+  short_description: "Broad, source-grounded bug audits across system boundaries"
+  default_prompt: "Use $deep-bug-audit to audit the current session or selected paths for deep cross-boundary bugs."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,32 @@
+{
+  "name": "mivia-agentic-engineering",
+  "version": "0.1.0",
+  "description": "Engineering working contracts, bug-audit, and verification skills for reliable agentic software delivery.",
+  "author": {
+    "name": "MiviaLabs",
+    "url": "https://github.com/MiviaLabs"
+  },
+  "homepage": "https://github.com/MiviaLabs/mivia-agent-skills",
+  "repository": "https://github.com/MiviaLabs/mivia-agent-skills",
+  "license": "MIT",
+  "keywords": [
+    "coding-agents",
+    "engineering",
+    "verification",
+    "bug-audits",
+    "agent-skills"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Mivia Agentic Engineering",
+    "shortDescription": "Working contracts, bug-audit, and verification workflows for coding agents",
+    "longDescription": "Apply evidence discipline, risk-based autonomy, minimal implementation, deep bug auditing, review, and scoped verification to software engineering work.",
+    "developerName": "MiviaLabs",
+    "category": "Developer Tools",
+    "defaultPrompt": [
+      "Apply the engineering working contract to this coding task.",
+      "Verify this code change and report the remaining risk.",
+      "Run a deep bug audit across the selected paths and report source-grounded findings."
+    ]
+  }
+}

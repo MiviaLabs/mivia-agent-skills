@@ -1,0 +1,15 @@
+{
+  "name": "software engineering task activates the working contract",
+  "should_trigger": true,
+  "input": {
+    "request": "Fix the race condition in the job scheduler and verify the change.",
+    "context": "A repository is available with tests and runtime logs."
+  },
+  "expected_behavior": [
+    "inspect repository evidence before proposing a fix",
+    "separate intended behavior from current behavior",
+    "prefer the smallest complete change",
+    "verify according to concurrency risk",
+    "report residual uncertainty without overstating confidence"
+  ]
+}

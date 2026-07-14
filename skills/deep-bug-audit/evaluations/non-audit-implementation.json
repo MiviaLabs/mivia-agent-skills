@@ -1,0 +1,12 @@
+{
+  "name": "ordinary implementation request does not activate deep audit",
+  "should_trigger": false,
+  "input": {
+    "request": "Implement the new health endpoint and add the normal unit test.",
+    "context": "No audit, review, production-readiness sweep, or bug hunt was requested."
+  },
+  "expected_behavior": [
+    "do not invoke the deep bug audit workflow solely because code is being changed",
+    "complete the implementation using the repository's normal engineering instructions"
+  ]
+}

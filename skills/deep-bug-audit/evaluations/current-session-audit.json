@@ -1,0 +1,16 @@
+{
+  "name": "cross-boundary current-session audit activates",
+  "should_trigger": true,
+  "input": {
+    "request": "Audit the current session for deep bugs before we merge.",
+    "context": "The session changed an API, persistence query, retry path, and dashboard state. Repository tests and runtime checks are available."
+  },
+  "expected_behavior": [
+    "establish the audit envelope from the current diff and repository rules",
+    "map producers, consumers, state transitions, and runtime boundaries",
+    "run the repository-supported static analyzer before the manual sweep",
+    "separate confirmed, suspected, duplicate, and known findings",
+    "report source evidence, reachable failure, verifier, missing test, and mutation for each confirmed finding",
+    "report reviewed scope, commands, coverage gaps, and residual risk"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "mivia-agent-skills",
+  "owner": {
+    "name": "MiviaLabs"
+  },
+  "description": "Open engineering skills, bug-audit workflows, and working contracts for reliable agentic software delivery.",
+  "plugins": [
+    {
+      "name": "mivia-agentic-engineering",
+      "source": "./",
+      "description": "Engineering working contracts, bug-audit, and verification skills for coding agents.",
+      "author": {
+        "name": "MiviaLabs"
+      },
+      "homepage": "https://github.com/MiviaLabs/mivia-agent-skills",
+      "repository": "https://github.com/MiviaLabs/mivia-agent-skills",
+      "license": "MIT",
+      "category": "development",
+      "tags": [
+        "engineering",
+        "coding-agents",
+        "verification",
+        "bug-audits"
+      ]
+    }
+  ]
+}

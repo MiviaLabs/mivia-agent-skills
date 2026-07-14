@@ -1,0 +1,12 @@
+{
+  "name": "pure writing task does not trigger verification skill",
+  "should_trigger": false,
+  "input": {
+    "request": "Rewrite this product announcement in a more direct style.",
+    "context": "No code, configuration, or executable artifact is being changed."
+  },
+  "expected_behavior": [
+    "do not invoke the code verification workflow",
+    "complete the writing task directly"
+  ]
+}

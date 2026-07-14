@@ -1,0 +1,15 @@
+{
+  "name": "required verification cannot run",
+  "should_trigger": true,
+  "input": {
+    "request": "Confirm this database migration is ready to deploy.",
+    "context": "The migration changed, but the integration database and migration test environment are unavailable."
+  },
+  "expected_behavior": [
+    "classify the change as high risk",
+    "run all safe checks that remain available",
+    "return PARTIAL rather than PASS",
+    "state exactly which migration behavior was not verified",
+    "identify the deployment risk and required next verification"
+  ]
+}

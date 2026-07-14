@@ -1,0 +1,8 @@
+flowchart TB
+    T[Current task] --> X[Agent execution]
+    G[Standing contract] --> X
+    P[Project instructions] --> X
+    S[Skills] --> X
+    E[Permissions, hooks, rules, and CI] --> X
+    X --> V[Tests, logs, diff, and runtime evidence]
+    V --> X
