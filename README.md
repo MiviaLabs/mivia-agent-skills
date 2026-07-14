@@ -2,6 +2,8 @@
 
 Open skills, engineering contracts, doctrines, and practical guidance for reliable agentic software delivery.
 
+Read the [documentation site](https://mivialabs.github.io/mivia-agent-skills/) for a navigable HTML version of every Markdown file in this repository.
+
 This repository captures patterns developed through hands-on work with coding agents across planning, implementation, debugging, verification, review, and delivery.
 
 The goal is not to publish another prompt collection. The goal is to turn repeatable engineering judgment into reusable assets that people can install, inspect, test, and adapt.

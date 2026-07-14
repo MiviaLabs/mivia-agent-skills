@@ -1,0 +1,6 @@
+These web fonts are vendored from Fontsource packages used by the Mivia
+dashboard. Their original license texts are included beside the font files.
+
+- Inter Variable
+- Space Grotesk
+- IBM Plex Mono

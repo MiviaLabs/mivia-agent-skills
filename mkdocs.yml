@@ -1,0 +1,40 @@
+site_name: Mivia Agent Skills
+site_description: Portable agent skills and engineering workflows
+repo_name: MiviaLabs/mivia-agent-skills
+repo_url: https://github.com/MiviaLabs/mivia-agent-skills
+site_url: https://mivialabs.github.io/mivia-agent-skills/
+docs_dir: .docs-staging
+site_dir: site
+use_directory_urls: true
+theme:
+  name: material
+  logo: mivialabs-logo.v2.webp
+  favicon: mivialabs-logo.v2.webp
+  font: false
+  palette:
+    - scheme: slate
+      primary: custom
+      accent: custom
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+extra_css:
+  - stylesheets/extra.css
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
