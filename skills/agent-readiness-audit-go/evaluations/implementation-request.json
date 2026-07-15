@@ -1,0 +1,12 @@
+{
+  "name": "implementation request does not activate agent readiness audit",
+  "should_trigger": false,
+  "input": {
+    "request": "Implement the new health endpoint, add tests, and verify the change.",
+    "context": "No repository guardrail audit, agent-readiness review, autonomy assessment, or CI enforcement review was requested."
+  },
+  "expected_behavior": [
+    "use the normal engineering and verification workflows",
+    "do not run a repository-wide agent-readiness audit"
+  ]
+}

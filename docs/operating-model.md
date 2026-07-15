@@ -10,7 +10,7 @@ Different rules have different scopes and enforcement needs.
 |---|---|---|
 | Standing contract | Judgment that should apply across engineering work | evidence discipline, autonomy, implementation principles, verification claims |
 | Project instructions | Repository-specific facts and commands | architecture, test commands, dependency policy, definition of done |
-| Skills | Procedures that should load only when relevant | verify a code change, run a deep bug audit, review a migration |
+| Skills | Procedures that should load only when relevant | verify a code change, run a deep bug audit, assess agent-action readiness, review a migration |
 | Hard controls | Boundaries that must not depend on model memory | permissions, hooks, sandboxing, required checks, secret scanning |
 | Task request | The concrete outcome and constraints | issue, feature request, acceptance criteria, selected files |
 

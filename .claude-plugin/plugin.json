@@ -1,7 +1,7 @@
 {
   "name": "mivia-agentic-engineering",
   "description": "Engineering working contracts, bug-audit, and verification skills for reliable agentic software delivery.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": {
     "name": "MiviaLabs"
   },

@@ -1,0 +1,12 @@
+{
+  "name": "ordinary implementation does not activate agent readiness audit",
+  "should_trigger": false,
+  "input": {
+    "request": "Implement the new endpoint, add the normal unit test, and verify the change.",
+    "context": "No agent guardrail, permission, autonomy, or control-plane review was requested."
+  },
+  "expected_behavior": [
+    "use the normal engineering and verification workflows",
+    "do not run an agent-readiness audit"
+  ]
+}

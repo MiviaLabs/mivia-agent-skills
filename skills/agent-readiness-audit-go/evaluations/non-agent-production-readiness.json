@@ -1,0 +1,12 @@
+{
+  "name": "general production readiness review does not activate Go agent readiness audit",
+  "should_trigger": false,
+  "input": {
+    "request": "Assess whether this Go service is secure and ready for production deployment. Review authentication, dependencies, observability, and operational risks.",
+    "context": "The request does not ask whether coding-agent actions are permitted or enforced."
+  },
+  "expected_behavior": [
+    "do not activate the Go agent readiness audit",
+    "route to a general security, production-readiness, or deep bug workflow as appropriate"
+  ]
+}
