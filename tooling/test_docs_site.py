@@ -111,6 +111,13 @@ def main() -> int:
     if social_image in article_html_text:
         print("ERROR: article page still uses the default social image", file=sys.stderr)
         return 1
+    if (
+        '<img alt="Engineering Working Contracts article splash illustration" '
+        'src="engineering-working-contracts.webp" />'
+        not in article_html_text
+    ):
+        print("ERROR: article splash image was not rendered at the top of the article", file=sys.stderr)
+        return 1
 
     source_mermaid_blocks = sum(
         (ROOT / source).read_text(encoding="utf-8").count("```mermaid")

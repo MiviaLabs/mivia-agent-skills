@@ -1,5 +1,7 @@
 # Coding Agents Need an Engineering Working Contract
 
+![Engineering Working Contracts article splash illustration](engineering-working-contracts.webp)
+
 Most failures I see in agentic coding are not model intelligence failures. They are workflow failures.
 
 The agent can inspect code, generate a patch, run commands, and explain the result. Problems usually happen around that work. It assumes too much. It asks unnecessary questions. It patches the symptom instead of the cause. It introduces abstractions nobody asked for. It reports checks it did not run. Or it produces so much narration that the actual result becomes hard to review.
