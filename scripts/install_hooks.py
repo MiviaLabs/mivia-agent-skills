@@ -65,7 +65,7 @@ def main() -> int:
         return result.returncode
 
     print("Configured Git hooks: core.hooksPath=.githooks")
-    print("pre-commit runs repository checks before every commit.")
+    print("pre-commit runs repository checks and available MkDocs checks before every commit.")
     print("commit-msg enforces config/commit_conventions.json.")
     print("pre-push runs repository checks and the documentation build.")
     print("Install documentation tooling in this checkout before pushing:")

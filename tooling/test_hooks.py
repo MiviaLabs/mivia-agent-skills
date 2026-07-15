@@ -21,7 +21,10 @@ def main() -> int:
     assert pre_push.is_file()
     assert validate_workflow.is_file()
     assert runner.is_file()
-    assert "--suite pre-commit" in pre_commit.read_text(encoding="utf-8")
+    pre_commit_text = pre_commit.read_text(encoding="utf-8")
+    assert "SUITE=pre-commit" in pre_commit_text
+    assert "command -v mkdocs" in pre_commit_text
+    assert "SUITE=all" in pre_commit_text
     assert "tooling/check_commit_message.py" in commit_msg.read_text(encoding="utf-8")
     assert "--suite all" in pre_push.read_text(encoding="utf-8")
     workflow = validate_workflow.read_text(encoding="utf-8")

@@ -5,6 +5,11 @@ description: Verify an implemented code or configuration change with evidence ap
 
 # Verify Code Change
 
+## Usage examples
+
+- [Parser regression pass](references/examples/01-parser-regression-pass.md)
+- [Partial database migration verification](references/examples/02-database-migration-partial.md)
+
 ## Purpose
 
 Collect enough evidence to determine whether the requested behavior appears satisfied within the executed scope, identify material regressions visible in that scope, and expose what remains uncertain.

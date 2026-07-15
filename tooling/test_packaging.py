@@ -35,6 +35,8 @@ def test_packages_all_supported_fixture_entries(repository: Path) -> None:
         (skill / "support.txt").write_bytes(b"included support\n")
         (skill / "templates/prompt.txt").write_bytes(b"template\n")
         (skill / "references/taxonomy.md").write_bytes(b"reference\n")
+        (skill / "references/examples").mkdir()
+        (skill / "references/examples/01-example.md").write_bytes(b"example\n")
         (skill / "scripts/check.py").write_bytes(b"print('check')\n")
         (skill / "assets/example.txt").write_bytes(b"asset\n")
         (skill / "agents/openai.yaml").write_bytes(b"metadata\n")
@@ -50,6 +52,7 @@ def test_packages_all_supported_fixture_entries(repository: Path) -> None:
                 "fixture-skill/support.txt",
                 "fixture-skill/templates/prompt.txt",
                 "fixture-skill/references/taxonomy.md",
+                "fixture-skill/references/examples/01-example.md",
                 "fixture-skill/scripts/check.py",
                 "fixture-skill/assets/example.txt",
             }
@@ -57,6 +60,7 @@ def test_packages_all_supported_fixture_entries(repository: Path) -> None:
             assert archive.read("fixture-skill/support.txt") == b"included support\n"
             assert archive.read("fixture-skill/templates/prompt.txt") == b"template\n"
             assert archive.read("fixture-skill/references/taxonomy.md") == b"reference\n"
+            assert archive.read("fixture-skill/references/examples/01-example.md") == b"example\n"
             assert archive.read("fixture-skill/scripts/check.py") == b"print('check')\n"
             assert archive.read("fixture-skill/assets/example.txt") == b"asset\n"
 

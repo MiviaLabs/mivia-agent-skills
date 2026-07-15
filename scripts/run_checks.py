@@ -16,6 +16,7 @@ REPOSITORY_CHECKS = (
     ("repository validation", "tooling/validate_repository.py"),
     ("version consistency", "tooling/check_versions.py"),
     ("version tests", "tooling/test_versions.py"),
+    ("example tests", "tooling/test_examples.py"),
     ("deep bug audit tests", "tooling/test_deep_bug_audit.py"),
     ("distribution tests", "tooling/test_distribution.py"),
     ("project bootstrap tests", "tooling/test_project_bootstrap.py"),

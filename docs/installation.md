@@ -54,6 +54,11 @@ active instruction file, list the installed Mivia skills, and explain when the
 verification and deep bug audit skills apply. Check for repository overrides such as
 `AGENTS.override.md` before treating the result as complete.
 
+For a first task, use the [skill usage examples](examples.md). Select the
+closest task, open its exact skill-local example, replace the paths, commands,
+permissions, and approval owners, then review the agent's executed checks and
+residual-risk handoff.
+
 ## Global installation
 
 Global installation uses the same managed bundle for the current user:
