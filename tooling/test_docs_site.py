@@ -55,6 +55,7 @@ def main() -> int:
 
     required_assets = [
         site / "index.html",
+        site / "docs/images/mivia-agent-skill.webp",
         site / "mivialabs-logo.v2.webp",
         site / "stylesheets/extra.css",
         site / "fonts/inter-latin-wght-normal.woff2",
@@ -64,6 +65,28 @@ def main() -> int:
     missing_assets = [str(path.relative_to(site)) for path in required_assets if not path.is_file()]
     if missing_assets:
         print(f"ERROR: generated site is missing assets: {', '.join(missing_assets)}", file=sys.stderr)
+        return 1
+
+    social_image = (
+        'https://mivialabs.github.io/mivia-agent-skills/'
+        'docs/images/mivia-agent-skill.webp'
+    )
+    missing_social_metadata = [
+        html_file.relative_to(site)
+        for html_file in html_files
+        if f'<meta property="og:image" content="{social_image}">' not in html_file.read_text(
+            encoding="utf-8"
+        )
+        or '<meta name="twitter:card" content="summary_large_image">' not in html_file.read_text(
+            encoding="utf-8"
+        )
+    ]
+    if missing_social_metadata:
+        print(
+            "ERROR: generated pages are missing default social preview metadata: "
+            + ", ".join(str(path) for path in missing_social_metadata),
+            file=sys.stderr,
+        )
         return 1
 
     source_mermaid_blocks = sum(

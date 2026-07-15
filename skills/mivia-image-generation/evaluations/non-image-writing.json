@@ -1,0 +1,13 @@
+{
+  "name": "ordinary repository writing does not activate image generation",
+  "should_trigger": false,
+  "input": {
+    "request": "Rewrite the README introduction in a more direct style.",
+    "context": "No image, visual asset, image prompt, logo treatment, or artwork is requested."
+  },
+  "expected_behavior": [
+    "do not invoke the image-generation workflow",
+    "edit or rewrite the Markdown using the repository writing rules",
+    "do not inspect or modify image assets"
+  ]
+}

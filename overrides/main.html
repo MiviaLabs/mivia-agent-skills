@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  {% set social_image = config.site_url ~ "docs/images/mivia-agent-skill.webp" %}
+  {% set page_title = page.title if page.title else config.site_name %}
+  {% set page_description = page.meta.description if page.meta and page.meta.description else config.site_description %}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ config.site_name | e }}">
+  <meta property="og:title" content="{{ page_title | e }}">
+  <meta property="og:description" content="{{ page_description | e }}">
+  <meta property="og:url" content="{{ page.canonical_url | e }}">
+  <meta property="og:image" content="{{ social_image | e }}">
+  <meta property="og:image:alt" content="8-bit pixel-art illustration of a governed AI engineering workflow">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ page_title | e }}">
+  <meta name="twitter:description" content="{{ page_description | e }}">
+  <meta name="twitter:image" content="{{ social_image | e }}">
+{% endblock %}

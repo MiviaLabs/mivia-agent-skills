@@ -4,6 +4,8 @@ Open skills, engineering contracts, doctrines, and practical guidance for reliab
 
 Read the [documentation site](https://mivialabs.github.io/mivia-agent-skills/) for a navigable HTML version of every Markdown file in this repository.
 
+![8-bit pixel-art illustration of a governed AI engineering workflow](docs/images/mivia-agent-skill.webp)
+
 ## About
 
 I’m [Mac Lisowski](https://mivialabs.com/#about), founder and principal AI engineer at [MiviaLabs](https://mivialabs.com/). I build [MIVIA](https://mivia.app/), a governed AI engineering system, and publish the reusable skills, contracts, and workflows that support that work here.
@@ -93,6 +95,7 @@ See [Installation and usage](docs/installation.md) for setup, updates, removal, 
 - [`skills/engineering-working-contract`](skills/engineering-working-contract/SKILL.md) - applies the operating contract to software engineering work
 - [`skills/verify-code-change`](skills/verify-code-change/SKILL.md) - verifies code changes according to risk and blast radius
 - [`skills/deep-bug-audit`](skills/deep-bug-audit/SKILL.md) - audits cross-boundary behavior for source-grounded bugs and regression gaps
+- [`skills/mivia-image-generation`](skills/mivia-image-generation/SKILL.md) - generates repository images in the established Mivia visual style
 - [`contracts/engineering-agent-working-contract.md`](contracts/engineering-agent-working-contract.md) - the canonical standing contract
 - [`doctrines/`](doctrines/) - durable principles behind the contract
 - [`articles/`](articles/) - practical explanations based on real agentic coding work

@@ -19,7 +19,10 @@ from urllib.parse import quote, unquote, urlsplit, urlunsplit
 ROOT = Path(__file__).resolve().parents[1]
 STAGING_NAME = ".docs-staging"
 STAGING_MARKER = ".mivia-agent-skills-staging"
-STATIC_ASSETS_NAME = "docs-site"
+STATIC_ASSET_SOURCES = (
+    (Path("docs-site"), Path(".")),
+    (Path("docs/images"), Path("docs/images")),
+)
 MARKDOWN_SUFFIXES = {".md", ".markdown"}
 
 INLINE_LINK = re.compile(
@@ -240,20 +243,24 @@ def _generated_directory_index(
 
 
 def _stage_static_assets(root: Path, staging_dir: Path) -> None:
-    assets_dir = root / STATIC_ASSETS_NAME
-    if not assets_dir.is_dir():
-        return
-    for source in sorted(assets_dir.rglob("*")):
-        if not source.is_file():
+    for source_root, destination_root in STATIC_ASSET_SOURCES:
+        assets_dir = root / source_root
+        if not assets_dir.is_dir():
             continue
-        if source.is_symlink():
-            raise RuntimeError(f"Static documentation asset must not be a symlink: {source}")
-        relative = source.relative_to(assets_dir)
-        destination = staging_dir / relative
-        if destination.exists():
-            raise RuntimeError(f"Static documentation asset collides with staged file: {relative}")
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination)
+        for source in sorted(assets_dir.rglob("*")):
+            if not source.is_file():
+                continue
+            if source.is_symlink():
+                raise RuntimeError(f"Static documentation asset must not be a symlink: {source}")
+            relative = source.relative_to(assets_dir)
+            destination = staging_dir / destination_root / relative
+            if destination.exists():
+                collision = destination.relative_to(staging_dir)
+                raise RuntimeError(
+                    f"Static documentation asset collides with staged file: {collision}"
+                )
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
 
 
 def stage_markdown_files(root: Path, staging_dir: Path) -> dict[str, str]:

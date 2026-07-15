@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mivia Image Generation"
+  short_description: "Generate Mivia-style repository artwork"
+  default_prompt: "Use $mivia-image-generation to create a brand-consistent image for this repository."

@@ -123,11 +123,15 @@ def test_staging_copies_static_site_assets() -> None:
     try:
         write(root / "README.md", "# Root\n")
         write(root / "docs-site/stylesheets/extra.css", "body { color: red; }\n")
+        write(root / "docs/images/example.webp", "image bytes\n")
         run(["git", "add", "README.md"], root)
         staging = root / "staging"
         stage_markdown_files(root, staging)
         assert (staging / "stylesheets/extra.css").read_text(encoding="utf-8") == (
             "body { color: red; }\n"
+        )
+        assert (staging / "docs/images/example.webp").read_text(encoding="utf-8") == (
+            "image bytes\n"
         )
     finally:
         shutil.rmtree(root)

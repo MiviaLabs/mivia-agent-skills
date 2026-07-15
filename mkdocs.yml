@@ -8,6 +8,7 @@ site_dir: site
 use_directory_urls: true
 theme:
   name: material
+  custom_dir: overrides
   logo: mivialabs-logo.v2.webp
   favicon: mivialabs-logo.v2.webp
   font: false

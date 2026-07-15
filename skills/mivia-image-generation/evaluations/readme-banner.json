@@ -1,0 +1,15 @@
+{
+  "name": "Mivia-style README banner request activates image generation",
+  "should_trigger": true,
+  "input": {
+    "request": "Generate a wide 8-bit image for the main README showing a governed AI engineering workflow in the Mivia style.",
+    "context": "The repository contains docs-site/mivialabs-logo.v2.webp and docs-site/stylesheets/extra.css. The image should be generated, not only described."
+  },
+  "expected_behavior": [
+    "read the repository visual style reference and inspect the current logo and CSS assets",
+    "compose one focal README-safe visual story using task dependencies, verification evidence, and human review",
+    "use the supported image-generation capability with the logo only as a verified reference",
+    "avoid readable generated text, invented wordmarks, and generic robot or game imagery",
+    "return the image or exact output path, dimensions, format, alt text, and material limitations"
+  ]
+}
