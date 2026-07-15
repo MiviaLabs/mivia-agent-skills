@@ -239,6 +239,7 @@ def test_installer(repository: Path, temporary: Path) -> None:
         "../forged-outside-skill",
         "nested/skill",
         "nested\\skill",
+        "C:skill",
         None,
     ):
         registry.write_text(
@@ -340,6 +341,12 @@ def test_packages(repository: Path, temporary: Path) -> None:
             for relative, content in example_files(repository).items()
             if relative.startswith(f"{name}/")
         }
+        archive_examples = {
+            entry.removeprefix(f"{name}/")
+            for entry in entries
+            if entry.startswith(f"{name}/references/examples/")
+        }
+        assert archive_examples == set(source_examples)
         for relative, content in source_examples.items():
             archive_name = f"{name}/{relative}"
             assert archive_name in entries

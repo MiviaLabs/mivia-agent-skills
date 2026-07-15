@@ -41,6 +41,12 @@ LINK = re.compile(r"!?(?:\[[^\]]*\])\(([^)]+)\)")
 FORBIDDEN_CLAIMS = (
     re.compile(r"\b(?:tests?|checks?|commands?)\s+(?:passed|succeeded)\b", re.I),
     re.compile(r"\bruntime evidence confirms\b", re.I),
+    re.compile(
+        r"\b(?:runtime verification|production verification|live verification|"
+        r"command execution|image generation|artifact generation)\s+"
+        r"(?:completed|succeeded|passed|confirmed|verified)(?:\s+successfully)?\b",
+        re.I,
+    ),
     re.compile(r"\bimage was created\b", re.I),
     re.compile(r"\bcreated the image\b", re.I),
 )
@@ -83,7 +89,8 @@ def test_expected_examples_exist() -> None:
     discovered = {
         path.relative_to(ROOT / "skills").as_posix()
         for skill in EXAMPLES
-        for path in (ROOT / "skills" / skill / "references" / "examples").rglob("*.md")
+        for path in (ROOT / "skills" / skill / "references" / "examples").rglob("*")
+        if path.is_file()
     }
     expected = {
         f"{skill}/references/examples/{filename}"
@@ -149,13 +156,23 @@ def test_example_pointers_and_index_links_resolve() -> None:
         skill_text = skill_file.read_text(encoding="utf-8")
         for filename in filenames:
             relative = f"references/examples/{filename}"
-            assert relative in skill_text, skill_file
-            assert (skill_file.parent / relative).is_file()
+            assert any(
+                line.strip() == f"- {relative}"
+                or line.strip() == f"- `{relative}`"
+                or line.strip()
+                == f"- `skills/{skill}/{relative}`"
+                or line.strip().endswith(f"]({relative})")
+                for line in skill_text.splitlines()
+            ), skill_file
+            assert (skill_file.parent / relative).is_file(), relative
             index_link = f"../skills/{skill}/{relative}"
             assert index_link in index_text, index_link
             assert (index.parent / index_link).resolve().is_file()
 
-    assert all((index.parent / link).resolve().exists() for link in markdown_links(index_text))
+    for link in markdown_links(index_text):
+        target = (index.parent / link).resolve()
+        assert target.is_relative_to(ROOT.resolve()), link
+        assert target.exists(), link
     assert all((ROOT / link).resolve().exists() for link in markdown_links(readme_text))
     assert all((ROOT / "docs" / link).resolve().exists() for link in markdown_links(installation_text))
 
@@ -166,6 +183,8 @@ def test_example_links_stay_inside_owning_skill() -> None:
         skill_file = ROOT / "skills" / skill / "SKILL.md"
         for link in markdown_links(skill_file.read_text(encoding="utf-8")):
             target = (skill_file.parent / link).resolve()
+            assert target.is_relative_to(skill_file.parent.resolve()), link
+            assert target.is_file(), link
             if "references/examples/" in link:
                 assert target.is_relative_to(skill_root), link
                 assert target in expected_paths(), link
