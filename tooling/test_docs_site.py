@@ -225,34 +225,33 @@ def main() -> int:
         print(f"ERROR: generated site is missing assets: {', '.join(missing_assets)}", file=sys.stderr)
         return 1
 
+    social_image_pattern = re.compile(
+        r'<meta property="og:image" content="([^"]+)">'
+    )
+    site_prefix = "/mivia-agent-skills/"
     social_image = (
-        'https://mivialabs.github.io/mivia-agent-skills/'
-        'docs/images/mivia-agent-skill.webp'
+        "https://mivialabs.github.io/mivia-agent-skills/"
+        "docs/images/mivia-agent-skill.webp"
     )
     article_social_image = (
         'https://mivialabs.github.io/mivia-agent-skills/'
         'articles/engineering-working-contracts/engineering-working-contracts.webp'
     )
-    missing_social_metadata = [
-        html_file.relative_to(site)
-        for html_file in html_files
-        if not (
-            (
-                f'<meta property="og:image" content="{social_image}">'
-                in html_file.read_text(encoding="utf-8")
-            )
-            or (
-                f'<meta property="og:image" content="{article_social_image}">'
-                in html_file.read_text(encoding="utf-8")
-            )
-        )
-        or '<meta name="twitter:card" content="summary_large_image">' not in html_file.read_text(
-            encoding="utf-8"
-        )
-    ]
+    missing_social_metadata = []
+    for html_file in html_files:
+        html = html_file.read_text(encoding="utf-8")
+        match = social_image_pattern.search(html)
+        if match is None or '<meta name="twitter:card" content="summary_large_image">' not in html:
+            missing_social_metadata.append(html_file.relative_to(site))
+            continue
+        image_url = urlsplit(match.group(1))
+        if image_url.path.startswith(site_prefix):
+            image_path = site / image_url.path[len(site_prefix) :]
+            if not image_path.is_file():
+                missing_social_metadata.append(html_file.relative_to(site))
     if missing_social_metadata:
         print(
-            "ERROR: generated pages are missing default social preview metadata: "
+            "ERROR: generated pages are missing valid social preview metadata: "
             + ", ".join(str(path) for path in missing_social_metadata),
             file=sys.stderr,
         )
