@@ -49,7 +49,7 @@ def validate_subject(subject: str, conventions: dict[str, object]) -> str | None
     allowed = ", ".join(types)
     return (
         "Commit message does not follow the repository convention.\n"
-        f"Read {CONVENTIONS.relative_to(ROOT)} and use: "
+        f"Read {CONVENTIONS.relative_to(ROOT).as_posix()} and use: "
         "<type>[optional scope][!]: <description>\n"
         f"Allowed types: {allowed}\n"
         "Examples: feat: add project bootstrap; fix(hooks): explain invalid commits"

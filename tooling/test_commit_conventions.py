@@ -85,6 +85,7 @@ def main() -> int:
     invalid = run_checker(root, "Add a capability\n")
     assert invalid.returncode == 1
     assert "config/commit_conventions.json" in invalid.stderr
+    assert "config\\commit_conventions.json" not in invalid.stderr
     assert "Allowed types:" in invalid.stderr
 
     empty = run_checker(root, "\n")
