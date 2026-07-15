@@ -1,0 +1,12 @@
+{
+  "name": "general production readiness does not activate agent readiness audit",
+  "should_trigger": false,
+  "input": {
+    "request": "Assess whether this service is secure and ready for production deployment. Review authentication, dependencies, observability, and operational risks.",
+    "context": "The request does not ask whether coding-agent actions are permitted or enforced."
+  },
+  "expected_behavior": [
+    "do not activate the agent readiness audit",
+    "route to a security or production-readiness workflow as appropriate"
+  ]
+}

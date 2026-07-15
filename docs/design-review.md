@@ -74,5 +74,6 @@ Marketplace installation by repository name depends on the manifests being prese
 - Claude Desktop release downloads become available only after the first tagged release.
 - The working contract can still conflict with repository-specific instructions if teams write ambiguous overrides.
 - Hard controls remain the responsibility of the consuming environment.
+- The Go agent-readiness adapter depends on the generic agent-readiness skill when skills are distributed as separate ZIPs; both packages must be installed together.
 
 These are explicit limits, not hidden implementation details.

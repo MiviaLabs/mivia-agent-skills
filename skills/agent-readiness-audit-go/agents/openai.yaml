@@ -1,0 +1,6 @@
+interface:
+  display_name: "Go Agent Readiness Audit"
+  short_description: "Audit Go controls governing coding-agent actions"
+  default_prompt: "Use $agent-readiness-audit-go to assess this Go repository's evidence-backed controls for named coding-agent actions."
+policy:
+  allow_implicit_invocation: true

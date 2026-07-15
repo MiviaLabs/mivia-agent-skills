@@ -62,7 +62,7 @@ Start a new session or run `/reload-plugins`.
 
 ### Claude Desktop and Cowork
 
-Tagged releases attach one upload-ready ZIP per skill. Download the ZIP files you need, then open **Customize > Skills**, choose **Create skill**, and upload them separately.
+Tagged releases attach one upload-ready ZIP per skill. Download the ZIP files you need, then open **Customize > Skills**, choose **Create skill**, and upload them separately. The Go readiness adapter depends on the generic readiness skill, so upload both readiness ZIPs together.
 
 Before the first release, build the ZIP files locally:
 
@@ -102,6 +102,8 @@ transcripts or correctness guarantees.
 - [`skills/engineering-working-contract`](skills/engineering-working-contract/SKILL.md) - applies the operating contract to software engineering work
 - [`skills/verify-code-change`](skills/verify-code-change/SKILL.md) - verifies code changes according to risk and blast radius
 - [`skills/deep-bug-audit`](skills/deep-bug-audit/SKILL.md) - audits cross-boundary behavior for source-grounded bugs and regression gaps
+- [`skills/agent-readiness-audit`](skills/agent-readiness-audit/SKILL.md) - audits generic controls governing coding-agent actions and autonomy limits
+- [`skills/agent-readiness-audit-go`](skills/agent-readiness-audit-go/SKILL.md) - applies the generic readiness contract to Go repositories and Go-specific controls
 - [`skills/mivia-image-generation`](skills/mivia-image-generation/SKILL.md) - generates repository images in the established Mivia visual style
 - [`contracts/engineering-agent-working-contract.md`](contracts/engineering-agent-working-contract.md) - the canonical standing contract
 - [`doctrines/`](doctrines/) - durable principles behind the contract

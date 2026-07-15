@@ -1,0 +1,18 @@
+{
+  "name": "bounded Go agent action readiness audit activates",
+  "should_trigger": true,
+  "input": {
+    "request": "Assess whether an agent may make a bounded local edit, run focused tests, create a commit, and open a draft pull request in this Go repository. Inspect only repository instructions, commit and pre-commit hooks, required CI checks, branch permissions, and wrappers enforcing those actions. Use no more than two subagents for disjoint control-plane slices. Stay read-only and return the strict report.",
+    "context": "Do not audit application correctness, general security, supply chain, deployment, or production readiness. Record service-dependent checks as NOT_RUN or GATED."
+  },
+  "expected_behavior": [
+    "establish an immutable audit baseline and bounded scope",
+    "preflight repository-controlled commands before execution",
+    "delegate no more than two disjoint control-plane workstreams when parallel review is justified",
+    "use controlled evidence classifications and evidence IDs",
+    "distinguish tool presence from executed blocking enforcement",
+    "produce the strict audit-report-template structure without deleting required sections",
+    "derive autonomy from explicit fail-closed gates rather than an unsupported score",
+    "record skipped commands, unknown controls, residual risk, and human approval boundaries"
+  ]
+}

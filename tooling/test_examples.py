@@ -22,9 +22,21 @@ EXAMPLES = {
         "01-current-session-cross-boundary.md",
         "02-targeted-auth-persistence-audit.md",
     ),
+    "agent-readiness-audit": (
+        "01-bounded-action-readiness.md",
+        "02-repository-readiness-gated.md",
+    ),
+    "agent-readiness-audit-go": (
+        "01-repository-autonomy-readiness.md",
+        "02-agent-runtime-readiness-gated.md",
+    ),
     "mivia-image-generation": (
         "01-readme-banner.md",
         "02-image-capability-unavailable.md",
+    ),
+    "agent-readiness-audit-go": (
+        "01-repository-autonomy-readiness.md",
+        "02-agent-runtime-readiness-gated.md",
     ),
 }
 REQUIRED_SECTIONS = (

@@ -51,7 +51,11 @@ instruction block remains the always-on entry point.
 
 After installation, start a fresh agent session and ask it to identify the
 active instruction file, list the installed Mivia skills, and explain when the
-verification and deep bug audit skills apply. Check for repository overrides such as
+verification, deep bug audit, generic agent readiness, and Go agent readiness
+skills apply. Use the readiness skills only for named coding-agent actions and
+control-plane evidence. Use the Go adapter for Go repositories; neither skill
+is a general application security or production-readiness review.
+Check for repository overrides such as
 `AGENTS.override.md` before treating the result as complete.
 
 For a first task, use the [skill usage examples](examples.md). Select the
@@ -117,7 +121,9 @@ python3 scripts/package_claude_skills.py --output dist
 ```
 
 Upload the generated skill ZIPs through the product's custom-skill flow. The
-packages exclude repository evaluations and Codex metadata.
+packages exclude repository evaluations and Codex metadata. The Go readiness
+ZIP depends on the generic readiness ZIP; upload both when using the Go
+adapter.
 
 ## Verification
 
