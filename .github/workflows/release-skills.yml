@@ -18,6 +18,7 @@ jobs:
           python-version: "3.12"
       - run: python tooling/validate_repository.py
       - run: python tooling/check_versions.py --tag "${GITHUB_REF_NAME}"
+      - run: python tooling/test_examples.py
       - run: python tooling/test_distribution.py
       - run: python tooling/test_deep_bug_audit.py
       - run: python tooling/test_packaging.py
