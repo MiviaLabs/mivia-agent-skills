@@ -22,7 +22,7 @@ SEMVER = re.compile(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tag", help="Release tag, for example v0.1.0")
+    parser.add_argument("--tag", help="Release tag, for example v0.2.0")
     return parser.parse_args()
 
 
