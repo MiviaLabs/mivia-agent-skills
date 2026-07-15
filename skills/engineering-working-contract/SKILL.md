@@ -113,3 +113,8 @@ Use only the sections that apply:
 - **Risks or blockers**
 
 Omit empty sections. Keep the response proportionate to the task. Do not claim completion when required verification is blocked.
+
+## Usage examples
+
+- `skills/engineering-working-contract/references/examples/01-concurrency-fix.md`
+- `skills/engineering-working-contract/references/examples/02-production-containment.md`

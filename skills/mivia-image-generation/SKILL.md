@@ -54,3 +54,8 @@ If the request does not specify dimensions, choose a practical size for the plac
 Use the platform's supported image-generation capability when available. In Codex, follow the image-generation tool's rules for new images, edits, reference images, and visual inspection. Do not use Python or generic image-editing code as a substitute for the image-generation capability when the user asked for generated or edited artwork.
 
 Do not activate this skill for ordinary Markdown layout, CSS-only styling, logo file conversion, image compression, or a request to write generic image prompts unrelated to this repository's visual system.
+
+## Usage examples
+
+- [README banner](references/examples/01-readme-banner.md)
+- [Image capability unavailable](references/examples/02-image-capability-unavailable.md)

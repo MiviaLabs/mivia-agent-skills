@@ -90,6 +90,13 @@ files it manages.
 
 See [Installation and usage](docs/installation.md) for setup, updates, removal, verification, and platform limits.
 
+## Use a skill for a first task
+
+After installation, choose a task from the [skill usage examples](docs/examples.md),
+replace its repository-specific placeholders, and ask the agent for an
+evidence-backed handoff. The examples are adaptable templates, not executed
+transcripts or correctness guarantees.
+
 ## What is included
 
 - [`skills/engineering-working-contract`](skills/engineering-working-contract/SKILL.md) - applies the operating contract to software engineering work

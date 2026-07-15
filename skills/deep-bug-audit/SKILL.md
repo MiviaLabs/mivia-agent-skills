@@ -207,3 +207,8 @@ When the target spans multiple components, persistence, workflows, security
 boundaries, UI, or runtime services, load the bundled
 `references/bug-taxonomy.md` from this skill directory and mark each relevant
 category as covered, gated, not run, or not applicable.
+
+## Usage examples
+
+- [Current-session cross-boundary audit](references/examples/01-current-session-cross-boundary.md)
+- [Targeted auth persistence audit](references/examples/02-targeted-auth-persistence-audit.md)

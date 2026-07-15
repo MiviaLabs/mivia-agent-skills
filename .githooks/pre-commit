@@ -14,4 +14,16 @@ else
     PYTHON=python
 fi
 
-exec "$PYTHON" scripts/run_checks.py --suite pre-commit
+case "$PYTHON" in
+    */bin/python|*/Scripts/python.exe)
+        export PATH="$(dirname "$PYTHON"):$PATH"
+        ;;
+esac
+
+if command -v mkdocs >/dev/null 2>&1; then
+    SUITE=all
+else
+    SUITE=pre-commit
+fi
+
+exec "$PYTHON" scripts/run_checks.py --suite "$SUITE"

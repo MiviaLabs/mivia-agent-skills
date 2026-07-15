@@ -47,6 +47,42 @@ def tree_state(root: Path) -> dict[str, tuple[str, bytes | None]]:
     return state
 
 
+def example_files(repository: Path) -> dict[str, bytes]:
+    files = {}
+    for skill in sorted((repository / "skills").iterdir()):
+        examples = skill / "references" / "examples"
+        if not examples.is_dir():
+            continue
+        for path in sorted(examples.rglob("*")):
+            if path.is_file():
+                files[f"{skill.name}/references/examples/{path.relative_to(examples)}"] = (
+                    path.read_bytes()
+                )
+    return files
+
+
+def assert_installed_examples(repository: Path, project: Path, target: str) -> None:
+    source_files = example_files(repository)
+    installed_root = project / f".{target}/skills"
+    installed_files = {}
+    source_skills = {relative.split("/", 1)[0] for relative in source_files}
+    for skill in sorted(installed_root.iterdir()):
+        if skill.name not in source_skills:
+            continue
+        examples = skill / "references" / "examples"
+        if not examples.is_dir():
+            continue
+        for path in sorted(examples.rglob("*")):
+            if path.is_file():
+                relative = (
+                    f"{skill.name}/references/examples/{path.relative_to(examples)}"
+                )
+                installed_files[relative] = path.read_bytes()
+    missing = sorted(set(source_files) - set(installed_files))
+    extra = sorted(set(installed_files) - set(source_files))
+    assert not missing and not extra, f"example tree mismatch: missing={missing}, extra={extra}"
+
+
 def test_both_transaction_rollback(repository: Path, temporary: Path) -> None:
     installer = repository / "scripts/install.py"
     project = temporary / "rollback-project"
@@ -160,6 +196,8 @@ def test_installer(repository: Path, temporary: Path) -> None:
     shutil.rmtree(project / ".agents/skills/verify-code-change")
     run(command)
     assert_managed_install(project)
+    assert_installed_examples(repository, project, "agents")
+    assert_installed_examples(repository, project, "claude")
 
     run(command)
     assert_managed_install(project)
@@ -170,6 +208,8 @@ def test_installer(repository: Path, temporary: Path) -> None:
     reinstall_note = project / ".agents/skills/engineering-working-contract/user-note.md"
     reinstall_note.write_text("Keep this reinstall note\n", encoding="utf-8")
     run(command)
+    assert_installed_examples(repository, project, "agents")
+    assert_installed_examples(repository, project, "claude")
     reinstall_backups = list(
         (project / ".agents/skills").glob(
             "engineering-working-contract.mivia-backup-*/user-note.md"
@@ -186,12 +226,20 @@ def test_installer(repository: Path, temporary: Path) -> None:
     (protected_outside_skill / ".mivia-managed").write_text(
         "MiviaLabs/mivia-agent-skills\n", encoding="utf-8"
     )
+    unmarked_skill = project / ".claude/skills/user-owned-skill"
+    unmarked_skill.mkdir()
+    (unmarked_skill / "SKILL.md").write_text("user-owned\n", encoding="utf-8")
+    existing_backup = project / ".agents/skills/existing.mivia-backup-000000"
+    existing_backup.write_text("keep\n", encoding="utf-8")
+    unrelated = project / "unrelated-project-file.txt"
+    unrelated.write_text("keep\n", encoding="utf-8")
 
     for unsafe_name in (
         "/tmp/forged-skill",
         "../forged-outside-skill",
         "nested/skill",
         "nested\\skill",
+        "C:skill",
         None,
     ):
         registry.write_text(
@@ -225,11 +273,45 @@ def test_installer(repository: Path, temporary: Path) -> None:
     assert not (project / ".agents/skills/deep-bug-audit").exists()
     assert not (project / ".claude/skills/deep-bug-audit").exists()
     assert protected_outside_skill.exists()
+    assert unmarked_skill.exists()
+    assert existing_backup.read_text(encoding="utf-8") == "keep\n"
+    assert unrelated.read_text(encoding="utf-8") == "keep\n"
+    for relative in example_files(repository):
+        assert not (project / ".agents/skills" / relative).exists()
+        assert not (project / ".claude/skills" / relative).exists()
     uninstall_backups = list(
         (project / ".claude/skills").glob("verify-code-change.mivia-backup-*/user-note.md")
     )
     assert len(uninstall_backups) == 1
     assert uninstall_backups[0].read_text(encoding="utf-8") == "Keep this uninstall note\n"
+
+
+def test_installed_example_tree_rejects_extra_file(repository: Path, temporary: Path) -> None:
+    project = temporary / "extra-example-project"
+    project.mkdir()
+    run(
+        [
+            sys.executable,
+            str(repository / "scripts/install.py"),
+            "--scope",
+            "project",
+            "--target",
+            "codex",
+            "--project",
+            str(project),
+        ]
+    )
+    extra = (
+        project
+        / ".agents/skills/engineering-working-contract/references/examples/unexpected.md"
+    )
+    extra.write_text("unexpected\n", encoding="utf-8")
+    try:
+        assert_installed_examples(repository, project, "agents")
+    except AssertionError as error:
+        assert "unexpected.md" in str(error), error
+        return
+    raise AssertionError("Unexpected installed example file was not rejected")
 
 
 def test_packages(repository: Path, temporary: Path) -> None:
@@ -254,6 +336,22 @@ def test_packages(repository: Path, temporary: Path) -> None:
         assert all(entry.startswith(f"{name}/") for entry in entries)
         assert not any("evaluations/" in entry for entry in entries)
         assert not any("agents/" in entry for entry in entries)
+        source_examples = {
+            relative.split("/", 1)[1]: content
+            for relative, content in example_files(repository).items()
+            if relative.startswith(f"{name}/")
+        }
+        archive_examples = {
+            entry.removeprefix(f"{name}/")
+            for entry in entries
+            if entry.startswith(f"{name}/references/examples/")
+        }
+        assert archive_examples == set(source_examples)
+        for relative, content in source_examples.items():
+            archive_name = f"{name}/{relative}"
+            assert archive_name in entries
+            with zipfile.ZipFile(archive_path) as archive:
+                assert archive.read(archive_name) == content
         if name == "deep-bug-audit":
             assert f"{name}/references/bug-taxonomy.md" in entries
             assert f"{name}/scripts/audit_efficiency_score.py" in entries
@@ -265,6 +363,7 @@ def main() -> int:
         temporary = Path(temp_dir)
         test_both_transaction_rollback(repository, temporary)
         test_both_uninstall_transaction_rollback(repository, temporary)
+        test_installed_example_tree_rejects_extra_file(repository, temporary)
         test_installer(repository, temporary)
         test_packages(repository, temporary)
     print("Distribution tests passed")

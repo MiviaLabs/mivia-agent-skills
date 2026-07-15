@@ -16,6 +16,8 @@ REPOSITORY_CHECKS = (
     ("repository validation", "tooling/validate_repository.py"),
     ("version consistency", "tooling/check_versions.py"),
     ("version tests", "tooling/test_versions.py"),
+    ("example tests", "tooling/test_examples.py"),
+    ("check runner tests", "tooling/test_run_checks.py"),
     ("deep bug audit tests", "tooling/test_deep_bug_audit.py"),
     ("distribution tests", "tooling/test_distribution.py"),
     ("project bootstrap tests", "tooling/test_project_bootstrap.py"),
@@ -57,6 +59,12 @@ def command_for(relative_script: str) -> list[str]:
     return [sys.executable, str(ROOT / relative_script)]
 
 
+def python_bin_dir() -> Path:
+    """Return the selected interpreter's bin directory without resolving symlinks."""
+
+    return Path(sys.executable).parent
+
+
 def print_plan(checks: list[tuple[str, str]]) -> None:
     for label, relative_script in checks:
         display_command = [sys.executable, (ROOT / relative_script).as_posix()]
@@ -72,7 +80,7 @@ def print_plan(checks: list[tuple[str, str]]) -> None:
 def run_check(label: str, relative_script: str) -> int:
     command = command_for(relative_script)
     environment = os.environ.copy()
-    current_python_bin = str(Path(sys.executable).resolve().parent)
+    current_python_bin = str(python_bin_dir())
     environment["PATH"] = os.pathsep.join(
         [current_python_bin, environment.get("PATH", "")]
     ).rstrip(os.pathsep)
