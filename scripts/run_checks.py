@@ -58,11 +58,13 @@ def command_for(relative_script: str) -> list[str]:
 
 def print_plan(checks: list[tuple[str, str]]) -> None:
     for label, relative_script in checks:
-        print(f"{label}: {' '.join(command_for(relative_script))}")
+        display_command = [sys.executable, (ROOT / relative_script).as_posix()]
+        print(f"{label}: {' '.join(display_command)}")
     if any(relative_script == "tooling/validate_repository.py" for _, relative_script in checks):
         print(
             "Claude skill packaging: "
-            f"{sys.executable} {ROOT / 'scripts/package_claude_skills.py'} --output {ROOT / 'dist'}"
+            f"{sys.executable} {(ROOT / 'scripts/package_claude_skills.py').as_posix()} "
+            f"--output {(ROOT / 'dist').as_posix()}"
         )
 
 
