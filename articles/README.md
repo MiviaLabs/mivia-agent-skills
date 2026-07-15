@@ -5,6 +5,7 @@ Practical writing on building reliable agentic engineering workflows.
 ## Table of contents
 
 - [Coding Agents Need an Engineering Working Contract](engineering-working-contracts/README.md)
+- [I Didn't Switch to Go Because of Agents](why-i-chose-go-for-agent-backends/README.md)
 
 ## Roadmap
 
