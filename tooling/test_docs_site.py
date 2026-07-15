@@ -33,7 +33,9 @@ def docs_fixture() -> Path:
         ROOT,
         temporary,
         dirs_exist_ok=True,
-        ignore=shutil.ignore_patterns(".git", ".docs-staging", "site", "dist", "__pycache__"),
+        ignore=shutil.ignore_patterns(
+            ".git", ".docs-staging", ".venv", "site", "dist", "__pycache__"
+        ),
     )
     run(["git", "init", "--quiet"], temporary)
     run(["git", "config", "user.email", "docs@example.com"], temporary)
@@ -149,7 +151,10 @@ def test_docs_build_renders_and_links_every_example() -> None:
                 for filename in filenames
             ]
             if skill == "engineering-working-contract":
-                assert all(filename in skill_html for filename in filenames)
+                assert all(
+                    f"skills/{skill}/references/examples/{filename}" in skill_html
+                    for filename in filenames
+                )
             else:
                 skill_targets = {
                     target

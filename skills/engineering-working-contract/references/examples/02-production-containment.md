@@ -37,6 +37,7 @@ Adapt this request to the target repository and incident:
 Provide the incident timeline, affected scope, current evidence, safe rollback
 or containment actions, permissions, alert ownership, deployment state, and the
 definition of what containment means. State whether live changes are allowed.
+Approval owner: {{incident commander or service owner}}.
 
 ## What good looks like
 

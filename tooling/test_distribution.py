@@ -65,11 +65,22 @@ def assert_installed_examples(repository: Path, project: Path, target: str) -> N
     source_files = example_files(repository)
     installed_root = project / f".{target}/skills"
     installed_files = {}
-    for relative in source_files:
-        path = installed_root / relative
-        assert path.is_file(), path
-        installed_files[relative] = path.read_bytes()
-    assert installed_files == source_files
+    source_skills = {relative.split("/", 1)[0] for relative in source_files}
+    for skill in sorted(installed_root.iterdir()):
+        if skill.name not in source_skills:
+            continue
+        examples = skill / "references" / "examples"
+        if not examples.is_dir():
+            continue
+        for path in sorted(examples.rglob("*")):
+            if path.is_file():
+                relative = (
+                    f"{skill.name}/references/examples/{path.relative_to(examples)}"
+                )
+                installed_files[relative] = path.read_bytes()
+    missing = sorted(set(source_files) - set(installed_files))
+    extra = sorted(set(installed_files) - set(source_files))
+    assert not missing and not extra, f"example tree mismatch: missing={missing}, extra={extra}"
 
 
 def test_both_transaction_rollback(repository: Path, temporary: Path) -> None:
@@ -274,6 +285,34 @@ def test_installer(repository: Path, temporary: Path) -> None:
     assert uninstall_backups[0].read_text(encoding="utf-8") == "Keep this uninstall note\n"
 
 
+def test_installed_example_tree_rejects_extra_file(repository: Path, temporary: Path) -> None:
+    project = temporary / "extra-example-project"
+    project.mkdir()
+    run(
+        [
+            sys.executable,
+            str(repository / "scripts/install.py"),
+            "--scope",
+            "project",
+            "--target",
+            "codex",
+            "--project",
+            str(project),
+        ]
+    )
+    extra = (
+        project
+        / ".agents/skills/engineering-working-contract/references/examples/unexpected.md"
+    )
+    extra.write_text("unexpected\n", encoding="utf-8")
+    try:
+        assert_installed_examples(repository, project, "agents")
+    except AssertionError as error:
+        assert "unexpected.md" in str(error), error
+        return
+    raise AssertionError("Unexpected installed example file was not rejected")
+
+
 def test_packages(repository: Path, temporary: Path) -> None:
     output = temporary / "dist"
     run(
@@ -317,6 +356,7 @@ def main() -> int:
         temporary = Path(temp_dir)
         test_both_transaction_rollback(repository, temporary)
         test_both_uninstall_transaction_rollback(repository, temporary)
+        test_installed_example_tree_rejects_extra_file(repository, temporary)
         test_installer(repository, temporary)
         test_packages(repository, temporary)
     print("Distribution tests passed")

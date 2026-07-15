@@ -35,6 +35,7 @@ Adapt this request to the current repository:
 Provide the current diff, repository instructions, API and persistence
 contracts, state transitions, retry and cancellation behavior, dashboard
 consumer expectations, test commands, analyzer command, and runtime access.
+Approval owner: {{reviewer or release owner}}.
 
 ## What good looks like
 

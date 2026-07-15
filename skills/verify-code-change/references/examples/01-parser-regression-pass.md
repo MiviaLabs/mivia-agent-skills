@@ -34,6 +34,7 @@ Adapt this request to the target repository:
 Provide the current diff, parser contract, accepted and rejected input forms,
 fixture scope, focused test command, available static or package checks, and any
 downstream consumer that depends on the parsed shape.
+Approval owner: {{code owner or reviewer}}.
 
 ## What good looks like
 

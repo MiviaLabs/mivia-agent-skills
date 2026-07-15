@@ -78,10 +78,10 @@ python3 -m venv .venv
 .venv/bin/python -m pip install --requirement requirements/docs.txt
 ```
 
-The pre-commit hook runs the repository checks and, when its selected Python
-interpreter can import MkDocs, the full documentation build and generated-site
-checks. The pre-push hook always runs those checks plus the documentation
-build. If the documentation tooling is missing, the pre-push hook fails closed
+The pre-commit hook runs the repository checks and, when a local `mkdocs`
+executable is available on its selected PATH, the full documentation build and
+generated-site checks. The pre-push hook always runs those checks plus the
+documentation build. If the documentation tooling is missing, the pre-push hook fails closed
 instead of allowing a push that CI cannot build. Git hooks can still be bypassed with
 `--no-verify`, so protected branches and required GitHub checks remain the
 server-side authority.

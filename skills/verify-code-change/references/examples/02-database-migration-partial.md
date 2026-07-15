@@ -34,6 +34,7 @@ Adapt this request to the target repository:
 Provide the migration and application versions, schema and data impact, forward
 and rollback behavior, deploy order, compatibility requirements, available
 database fixtures, credentials or environment limits, and release criteria.
+Approval owner: {{database or release owner}}.
 
 ## What good looks like
 

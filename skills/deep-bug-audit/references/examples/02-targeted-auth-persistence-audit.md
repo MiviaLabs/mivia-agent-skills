@@ -31,6 +31,7 @@ Adapt this request to the target repository:
 Provide the authorization model, caller identity, tenant or project scope,
 query parameters, repository rules, migrations or indexes that affect the path,
 focused tests, static analyzer, and the explicit no-fix instruction.
+Approval owner: {{security or service owner}}.
 
 ## What good looks like
 

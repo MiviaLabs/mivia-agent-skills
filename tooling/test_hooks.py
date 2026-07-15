@@ -39,6 +39,7 @@ def main() -> int:
     assert result.returncode == 0, result.stderr
     for expected in (
         "tooling/validate_repository.py",
+        "tooling/test_examples.py",
         "tooling/test_project_bootstrap.py",
         "tooling/test_hooks.py",
         "tooling/build_docs_site.py",

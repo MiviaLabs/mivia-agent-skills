@@ -110,8 +110,13 @@ def test_examples_have_required_sections() -> None:
 def test_examples_require_adaptation_and_label_handoffs() -> None:
     for path in expected_paths():
         text = path.read_text(encoding="utf-8")
+        skill = path.parents[2]
+        assert len(text.splitlines()) < len(
+            (skill / "SKILL.md").read_text(encoding="utf-8").splitlines()
+        ), path
         assert "Adapt this request" in text, path
         assert "{{" in text, path
+        assert "Approval owner:" in section_bodies(text)["Required context"], path
         assert "illustrative" in text.lower(), path
         assert "not" in section_bodies(text)["Illustrative handoff"].lower(), path
         assert not any(pattern.search(text) for pattern in FORBIDDEN_CLAIMS), path

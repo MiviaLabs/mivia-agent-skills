@@ -38,6 +38,7 @@ Adapt this request to the target repository:
 Provide the current diff, the competing actors, shared state, cancellation and
 retry behavior, the invariant, available race or stress checks, and the
 definition of done. Include any repository rule that limits broad test runs.
+Approval owner: {{code owner or reviewer}}.
 
 ## What good looks like
 
