@@ -19,7 +19,7 @@ TEXT_SUFFIXES = {
     ".ps1",
     ".toml",
 }
-IGNORED_PARTS = {".git", "dist", "__pycache__"}
+IGNORED_PARTS = {".git", ".venv", "dist", "__pycache__"}
 PROHIBITED_PHRASES = (
     "dev" + " branch",
     "`dev`" + " branch",

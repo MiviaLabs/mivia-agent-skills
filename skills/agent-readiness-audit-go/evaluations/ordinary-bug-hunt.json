@@ -1,0 +1,12 @@
+{
+  "name": "ordinary bug hunt does not activate agent readiness audit",
+  "should_trigger": false,
+  "input": {
+    "request": "Deep-audit the authentication and persistence code for reachable correctness bugs. Do not modify files.",
+    "context": "The request asks for a source-grounded bug hunt, not a repository-wide guardrail or coding-agent autonomy review."
+  },
+  "expected_behavior": [
+    "use the deep-bug-audit workflow instead",
+    "do not inventory the entire repository's CI, supply chain, agent instructions, or autonomy levels"
+  ]
+}

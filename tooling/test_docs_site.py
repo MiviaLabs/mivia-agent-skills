@@ -83,9 +83,21 @@ def test_docs_build_renders_and_links_every_example() -> None:
                     "01-current-session-cross-boundary.md",
                     "02-targeted-auth-persistence-audit.md",
                 ),
+                "agent-readiness-audit": (
+                    "01-bounded-action-readiness.md",
+                    "02-repository-readiness-gated.md",
+                ),
+                "agent-readiness-audit-go": (
+                    "01-repository-autonomy-readiness.md",
+                    "02-agent-runtime-readiness-gated.md",
+                ),
                 "mivia-image-generation": (
                     "01-readme-banner.md",
                     "02-image-capability-unavailable.md",
+                ),
+                "agent-readiness-audit-go": (
+                    "01-repository-autonomy-readiness.md",
+                    "02-agent-runtime-readiness-gated.md",
                 ),
             }.items()
             for filename in filenames
@@ -126,9 +138,21 @@ def test_docs_build_renders_and_links_every_example() -> None:
                 "01-current-session-cross-boundary.md",
                 "02-targeted-auth-persistence-audit.md",
             ),
+            "agent-readiness-audit": (
+                "01-bounded-action-readiness.md",
+                "02-repository-readiness-gated.md",
+            ),
+            "agent-readiness-audit-go": (
+                "01-repository-autonomy-readiness.md",
+                "02-agent-runtime-readiness-gated.md",
+            ),
             "mivia-image-generation": (
                 "01-readme-banner.md",
                 "02-image-capability-unavailable.md",
+            ),
+            "agent-readiness-audit-go": (
+                "01-repository-autonomy-readiness.md",
+                "02-agent-runtime-readiness-gated.md",
             ),
         }
         for skill, filenames in example_index.items():

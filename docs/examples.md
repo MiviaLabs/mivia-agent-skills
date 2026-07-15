@@ -32,6 +32,10 @@ separate product-level check.
 | Migration verification with a missing deployment gate | [Verify code change](../skills/verify-code-change/SKILL.md) | [Partial migration verification](../skills/verify-code-change/references/examples/02-database-migration-partial.md) |
 | Current diff spanning system boundaries | [Deep bug audit](../skills/deep-bug-audit/SKILL.md) | [Current-session cross-boundary audit](../skills/deep-bug-audit/references/examples/01-current-session-cross-boundary.md) |
 | Named authorization and persistence paths | [Deep bug audit](../skills/deep-bug-audit/SKILL.md) | [Targeted auth persistence audit](../skills/deep-bug-audit/references/examples/02-targeted-auth-persistence-audit.md) |
+| Bounded coding-agent action review | [Agent readiness audit](../skills/agent-readiness-audit/SKILL.md) | [Bounded action readiness](../skills/agent-readiness-audit/references/examples/01-bounded-action-readiness.md) |
+| Repository-wide control-plane audit | [Agent readiness audit](../skills/agent-readiness-audit/SKILL.md) | [Gated repository readiness](../skills/agent-readiness-audit/references/examples/02-repository-readiness-gated.md) |
+| Go repository control-plane and autonomy review | [Go agent readiness audit](../skills/agent-readiness-audit-go/SKILL.md) | [Repository autonomy readiness](../skills/agent-readiness-audit-go/references/examples/01-repository-autonomy-readiness.md) |
+| Missing runtime or permission evidence in Go | [Go agent readiness audit](../skills/agent-readiness-audit-go/SKILL.md) | [Gated runtime readiness](../skills/agent-readiness-audit-go/references/examples/02-agent-runtime-readiness-gated.md) |
 | README visual with available image generation | [Mivia image generation](../skills/mivia-image-generation/SKILL.md) | [README banner](../skills/mivia-image-generation/references/examples/01-readme-banner.md) |
 | Image request when a capability or source is unavailable | [Mivia image generation](../skills/mivia-image-generation/SKILL.md) | [Capability unavailable](../skills/mivia-image-generation/references/examples/02-image-capability-unavailable.md) |
 
