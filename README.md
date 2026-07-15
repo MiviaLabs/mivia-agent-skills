@@ -151,6 +151,17 @@ See [Design review and known gaps](docs/design-review.md) for the claims that we
 
 ## Validate the repository
 
+Configure the local hooks once per checkout. They run the same repository
+checks as CI before commits and add the full documentation build before pushes:
+
+```bash
+python3 scripts/install_hooks.py
+python3 -m venv .venv
+.venv/bin/python -m pip install --requirement requirements/docs.txt
+```
+
+Then run the core checks directly when needed:
+
 ```bash
 python3 tooling/validate_repository.py
 python3 tooling/test_deep_bug_audit.py

@@ -45,11 +45,13 @@ def test_integrated_bootstrap(repository: Path, temporary: Path) -> None:
     root = project / ".mivia-agent-skills"
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["targets"] == ["claude", "codex"]
-    assert set(manifest["skills"]) == {
-        "deep-bug-audit",
-        "engineering-working-contract",
-        "verify-code-change",
+    expected_skills = {
+        skill.name
+        for skill in (repository / "skills").iterdir()
+        if skill.is_dir() and (skill / "SKILL.md").is_file()
     }
+    assert set(manifest["skills"]) == expected_skills
+    assert "mivia-image-generation" in expected_skills
     assert (root / "references/engineering-agent-working-contract.md").exists()
     assert (root / "references/doctrines/evidence-before-claims.md").exists()
     assert (project / ".agents/skills/deep-bug-audit/references/bug-taxonomy.md").exists()

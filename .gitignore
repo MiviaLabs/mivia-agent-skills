@@ -1,2 +1,4 @@
 .docs-staging/
 site/
+dist/
+__pycache__/
