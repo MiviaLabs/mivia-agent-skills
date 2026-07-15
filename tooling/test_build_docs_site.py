@@ -12,6 +12,7 @@ from pathlib import Path
 from build_docs_site import (
     STAGING_MARKER,
     STAGING_NAME,
+    _matching_directory_image,
     build_site,
     stage_site,
     stage_markdown_files,
@@ -137,6 +138,19 @@ def test_staging_copies_static_site_assets() -> None:
         shutil.rmtree(root)
 
 
+def test_directory_named_image_is_selected() -> None:
+    root = git_repository()
+    try:
+        write(root / "articles/example/README.md", "# Example\n")
+        write(root / "articles/example/example.png", "png\n")
+        write(root / "articles/example/example.webp", "webp\n")
+        assert _matching_directory_image(root, Path("articles/example/README.md")) == (
+            root / "articles/example/example.webp"
+        )
+    finally:
+        shutil.rmtree(root)
+
+
 def test_stage_site_leaves_files_for_mkdocs() -> None:
     root = git_repository()
     try:
@@ -185,6 +199,7 @@ def main() -> int:
     test_staging_rejects_destination_collisions()
     test_staging_context_cleans_generated_files()
     test_staging_copies_static_site_assets()
+    test_directory_named_image_is_selected()
     test_stage_site_leaves_files_for_mkdocs()
     test_build_site_invokes_command_and_cleans_staging()
     print("Docs build staging tests passed")

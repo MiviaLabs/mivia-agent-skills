@@ -71,11 +71,22 @@ def main() -> int:
         'https://mivialabs.github.io/mivia-agent-skills/'
         'docs/images/mivia-agent-skill.webp'
     )
+    article_social_image = (
+        'https://mivialabs.github.io/mivia-agent-skills/'
+        'articles/engineering-working-contracts/engineering-working-contracts.webp'
+    )
     missing_social_metadata = [
         html_file.relative_to(site)
         for html_file in html_files
-        if f'<meta property="og:image" content="{social_image}">' not in html_file.read_text(
-            encoding="utf-8"
+        if not (
+            (
+                f'<meta property="og:image" content="{social_image}">'
+                in html_file.read_text(encoding="utf-8")
+            )
+            or (
+                f'<meta property="og:image" content="{article_social_image}">'
+                in html_file.read_text(encoding="utf-8")
+            )
         )
         or '<meta name="twitter:card" content="summary_large_image">' not in html_file.read_text(
             encoding="utf-8"
@@ -87,6 +98,18 @@ def main() -> int:
             + ", ".join(str(path) for path in missing_social_metadata),
             file=sys.stderr,
         )
+        return 1
+
+    article_html = site / "articles/engineering-working-contracts/index.html"
+    article_html_text = article_html.read_text(encoding="utf-8")
+    if f'<meta property="og:image" content="{article_social_image}">' not in article_html_text:
+        print("ERROR: article-specific social image was not applied", file=sys.stderr)
+        return 1
+    if '<meta property="og:image:alt" content="Engineering Working Contracts article splash illustration">' not in article_html_text:
+        print("ERROR: article-specific social image alt text was not applied", file=sys.stderr)
+        return 1
+    if social_image in article_html_text:
+        print("ERROR: article page still uses the default social image", file=sys.stderr)
         return 1
 
     source_mermaid_blocks = sum(
