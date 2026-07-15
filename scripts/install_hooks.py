@@ -10,7 +10,11 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-HOOKS = (ROOT / ".githooks/pre-commit", ROOT / ".githooks/pre-push")
+HOOKS = (
+    ROOT / ".githooks/pre-commit",
+    ROOT / ".githooks/commit-msg",
+    ROOT / ".githooks/pre-push",
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,6 +66,7 @@ def main() -> int:
 
     print("Configured Git hooks: core.hooksPath=.githooks")
     print("pre-commit runs repository checks before every commit.")
+    print("commit-msg enforces config/commit_conventions.json.")
     print("pre-push runs repository checks and the documentation build.")
     print("Install documentation tooling in this checkout before pushing:")
     print("  python3 -m venv .venv")

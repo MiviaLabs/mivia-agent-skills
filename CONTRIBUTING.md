@@ -85,6 +85,13 @@ allowing a push that CI cannot build. Git hooks can still be bypassed with
 `--no-verify`, so protected branches and required GitHub checks remain the
 server-side authority.
 
+## Commit messages
+
+Commit messages use the convention in `config/commit_conventions.json`. Use the
+form `<type>[optional scope][!]: <description>`, for example `feat: add a
+skill` or `fix(hooks): explain invalid commits`. The tracked `commit-msg` hook
+and CI read the same file, so update that file when the allowed types change.
+
 ## Writing
 
 Use direct, plain language. Lead with the conclusion. Avoid hype, filler, defensive disclaimers, and unnecessary jargon. Use normal hyphens instead of em dashes.

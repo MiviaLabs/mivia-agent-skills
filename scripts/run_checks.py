@@ -20,6 +20,7 @@ REPOSITORY_CHECKS = (
     ("distribution tests", "tooling/test_distribution.py"),
     ("project bootstrap tests", "tooling/test_project_bootstrap.py"),
     ("packaging tests", "tooling/test_packaging.py"),
+    ("commit convention tests", "tooling/test_commit_conventions.py"),
     ("hook tests", "tooling/test_hooks.py"),
 )
 PRE_COMMIT_CHECKS = REPOSITORY_CHECKS

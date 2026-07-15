@@ -1,0 +1,20 @@
+{
+  "types": [
+    "build",
+    "chore",
+    "ci",
+    "docs",
+    "feat",
+    "fix",
+    "perf",
+    "refactor",
+    "revert",
+    "style",
+    "test"
+  ],
+  "allow_breaking_marker": true,
+  "allow_generated_prefixes": [
+    "Merge ",
+    "Revert "
+  ]
+}

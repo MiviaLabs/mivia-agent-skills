@@ -9,5 +9,8 @@ Before modifying this repository:
 5. Add positive and negative activation evaluations for every skill.
 6. Do not add em dashes to repository text.
 7. Run `python3 tooling/validate_repository.py` before reporting completion.
+8. Use the commit convention defined in `config/commit_conventions.json`. The
+   `commit-msg` hook and CI enforce it; read that file when a commit check
+   fails instead of inventing a new format.
 
 For changes to executable code, packaging, manifests, or workflows, also apply `skills/verify-code-change/SKILL.md`.

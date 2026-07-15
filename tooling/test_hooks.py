@@ -11,13 +11,16 @@ from pathlib import Path
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
     pre_commit = root / ".githooks/pre-commit"
+    commit_msg = root / ".githooks/commit-msg"
     pre_push = root / ".githooks/pre-push"
     runner = root / "scripts/run_checks.py"
 
     assert pre_commit.is_file()
+    assert commit_msg.is_file()
     assert pre_push.is_file()
     assert runner.is_file()
     assert "--suite pre-commit" in pre_commit.read_text(encoding="utf-8")
+    assert "tooling/check_commit_message.py" in commit_msg.read_text(encoding="utf-8")
     assert "--suite all" in pre_push.read_text(encoding="utf-8")
 
     result = subprocess.run(
