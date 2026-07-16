@@ -1,0 +1,12 @@
+flowchart LR
+    M[mivia-agent binary] --> I[Adapter interface]
+    I --> C1[codex]
+    I --> C2[claude]
+    I --> C3[zai / GLM]
+    I --> C4[crush]
+    I --> C5[antigravity]
+    C1 --> R1[codex CLI]
+    C2 --> R2[claude CLI]
+    C3 --> R3[zai CLI]
+    C4 --> R4[crush CLI]
+    C5 --> R5[agy CLI]

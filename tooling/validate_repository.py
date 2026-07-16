@@ -165,7 +165,9 @@ def main() -> int:
             if "://" in link or link.startswith("#") or link.startswith("mailto:"):
                 continue
             target = (markdown.parent / link.split("#", 1)[0]).resolve()
-            if not target.exists():
+            if not target.is_relative_to(root.resolve()):
+                error(errors, f"Link escapes repository in {markdown.relative_to(root)}: {link}")
+            elif not target.exists():
                 error(errors, f"Broken relative link in {markdown.relative_to(root)}: {link}")
 
     codex_manifest = json.loads((root / ".codex-plugin/plugin.json").read_text())

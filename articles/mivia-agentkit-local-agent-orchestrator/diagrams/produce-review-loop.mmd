@@ -1,0 +1,9 @@
+flowchart TB
+    P[Producer step<br/>adapter + model] -->|writes| A[.ai/runs/run-id/step/iter-001/artifact]
+    A -->|reads| R1[Reviewer 1<br/>different adapter]
+    A -->|reads| R2[Reviewer 2<br/>different adapter]
+    R1 -->|verdict| G[Consensus gate<br/>majority / unanimous / weighted]
+    R2 -->|verdict| G
+    G -->|pass| OK[Workflow exits pass]
+    G -->|fail, iterations remain| P
+    G -->|fail, cap reached| EX[on_exhausted: fail or warn]
