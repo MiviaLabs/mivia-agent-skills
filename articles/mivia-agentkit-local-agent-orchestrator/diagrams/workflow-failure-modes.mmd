@@ -1,0 +1,12 @@
+flowchart TB
+    A[Agent writes a patch] --> B{Review?}
+    B -->|self-review| C[Same blind spots]
+    B -->|none| D[Unverified change]
+    A --> E[Artifact in shared path]
+    E --> F[Overwrites prior run]
+    A --> G[Protected action]
+    G --> H[No gate]
+    C --> I[Unreliable output]
+    D --> I
+    F --> I
+    H --> I
