@@ -101,6 +101,16 @@ mutation that would catch the regression. Measure audit efficiency at the end.
      cleanup mechanism is a high-severity suspect until it is proven safe on
      panic, exception, cancellation, and early-return paths. A static analyzer
      may not catch cleanup that is called but no longer guaranteed to run.
+   - Verify each acquired resource independently. When a function acquires more
+     than one resource (file, lock, connection, handle, response body), check
+     that the cleanup for each specific acquisition runs on every path; do not
+     assume a cleanup pattern seen for one resource also covers another in the
+     same body. Quote the exact line you rely on before asserting what it does.
+     If no specific line supports a claim, do not make the claim.
+   - Assume a reasonably current language runtime and standard library unless
+     the code or its stated context says otherwise. Do not report a pattern as
+     a bug solely because it was one in an older version that the current
+     runtime resolves.
    - Prefer source evidence plus a focused test, command, fixture, runtime
      endpoint, log, or reproducible scenario.
    - Instruction text, helper-only assertions, and static inspection alone cannot
@@ -168,6 +178,10 @@ Required regression:
 Fix boundary:
 - Narrowest code area to change, or "not requested" for audit-only work.
 ```
+
+If no confirmed or suspected bug exists in the audit scope, state that plainly
+and briefly. Do not emit a finding-format block for a non-issue, and do not
+manufacture a finding to have something to report.
 
 Severity guide:
 
