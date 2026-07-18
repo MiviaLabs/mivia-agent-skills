@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>eval verify_code_change_regression — 20260718T102343Z-52668e69</title>
+  <style>
+/* mivia-evals report — offline-readable, print-friendly */
+
+:root {
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --text: #1a1d23;
+  --muted: #5c6570;
+  --border: #d8dee6;
+  --accent: #2563eb;
+  --pass: #15803d;
+  --fail: #b91c1c;
+  --partial: #b45309;
+  --error: #7f1d1d;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 1.5rem 2rem 3rem;
+  font-family: var(--sans);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.45;
+}
+
+.report-header {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.brand {
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+}
+
+h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.badge, .chip, .model-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  background: #eef2f7;
+}
+
+.badge { font-weight: 600; text-transform: uppercase; }
+.status-pass { color: var(--pass); background: #dcfce7; border-color: #86efac; }
+.status-fail { color: var(--fail); background: #fee2e2; border-color: #fca5a5; }
+.status-partial { color: var(--partial); background: #ffedd5; border-color: #fdba74; }
+.status-error { color: var(--error); background: #fee2e2; border-color: #fca5a5; }
+
+.models {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.model-chip {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.muted { color: var(--muted); }
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.kpi {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+}
+
+.kpi .label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.kpi .value {
+  font-size: 1.25rem;
+  font-weight: 650;
+  margin-top: 0.2rem;
+}
+
+.report-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+dl.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+
+dl.kv dt {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+dl.kv dd { margin: 0; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+th, td {
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  padding: 0.45rem 0.5rem;
+  vertical-align: top;
+}
+
+th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.case {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: #fafbfc;
+}
+
+.case-key {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+.case-value, .text-block {
+  margin: 0 0 0.65rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+}
+
+.report-footer {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+@media print {
+  body { background: white; padding: 0; }
+  .report-header, .report-section, .kpi { break-inside: avoid; }
+}
+
+  </style>
+</head>
+<body>
+  <header class="report-header">
+    <div class="brand">mivia-evals</div>
+    <h1>eval verify_code_change_regression</h1>
+    <div class="meta">
+      <span class="badge status-fail">fail</span>
+      <span class="chip">type: eval</span>
+      <span class="chip">run: 20260718T102343Z-52668e69</span>
+      <span class="chip">created: 2026-07-18T10:38:11Z</span>
+    </div>
+    <div class="models" aria-label="models">
+      <span class="model-chip">
+        <strong>eval_target</strong>
+        → cohere/north-mini-code:free
+<span class="muted">(openrouter)</span>      </span>
+      <span class="model-chip">
+        <strong>eval_judge</strong>
+        → nvidia/nemotron-3-ultra-550b-a55b:free
+<em>effort=medium</em><span class="muted">(openrouter)</span>      </span>
+    </div>
+  </header>
+
+  <section class="kpis">
+    <div class="kpi"><div class="label">pass rate</div><div class="value">0.50</div></div>
+    <div class="kpi"><div class="label">combined score</div><div class="value">0.542</div></div>
+    <div class="kpi"><div class="label">cases</div><div class="value">6</div></div>
+    <div class="kpi"><div class="label">passed</div><div class="value">3</div></div>
+    <div class="kpi"><div class="label">failed</div><div class="value">3</div></div>
+  </section>
+
+  <section class="report-section" id="section-overview">
+    <h2>Overview</h2>
+
+    <dl class="kv">
+      <dt>suite</dt><dd>verify_code_change_regression</dd>
+      <dt>pass_rate</dt><dd>0.5</dd>
+      <dt>combined_score</dt><dd>0.5416666666666666</dd>
+      <dt>status</dt><dd>fail</dd>
+      <dt>cases</dt><dd>6</dd>
+    </dl>
+
+  </section>
+  <section class="report-section" id="section-criteria">
+    <h2>Per-case criteria</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>case_id</th>
+          <th>passed</th>
+          <th>combined_score</th>
+          <th>model</th>
+          <th>error</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+            <td>clean_focused_pass</td>
+            <td>True</td>
+            <td>0.8500000000000001</td>
+            <td>cohere/north-mini-code:free</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>migration_unavailable_partial</td>
+            <td>True</td>
+            <td>1.0</td>
+            <td>cohere/north-mini-code:free</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>wrong_method_trap</td>
+            <td>True</td>
+            <td>1.0</td>
+            <td>cohere/north-mini-code:free</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>underclassification_trap</td>
+            <td>False</td>
+            <td>0.0</td>
+            <td>cohere/north-mini-code:free</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>diff_smell_not_clean</td>
+            <td>False</td>
+            <td>0.4000000000000001</td>
+            <td>cohere/north-mini-code:free</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>non_code_control</td>
+            <td>False</td>
+            <td>0.0</td>
+            <td>cohere/north-mini-code:free</td>
+            <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+  </section>
+  <section class="report-section" id="section-cases">
+    <h2>Case details</h2>
+
+    <div class="cases">
+      <article class="case">
+        <div class="case-field">
+          <div class="case-key">id</div>
+          <pre class="case-value">clean_focused_pass</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">passed</div>
+          <pre class="case-value">True</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">output</div>
+          <pre class="case-value">### Result
+PASS
+
+### Scope
+- The fix modifies `internal/config/timeout.go` to correctly parse bare integer strings as seconds before falling back to `time.ParseDuration`. A new regression test `TestParseTimeout_BareInteger` is added in `internal/config/timeout_test.go`. The change covers the `ParseTimeout` function and its associated test file.
+- Blast‑radius classification: **moderate** (publicly exported function in an internal package that is part of the config API; behavior change for callers).
+
+### Checks run
+- `go test ./internal/config/... -run TestParseTimeout` → **PASS** (new test and all pre‑existing cases pass).  
+- `golangci-lint run ./internal/config/...` → **PASS** (no lint findings).
+
+No other checks were executed.
+
+### Diff review
+No material issues found within the reviewed diff.
+
+### Remaining risk
+None identified within the executed scope.</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">metrics</div>
+          <pre class="case-value">[{&#39;metric_id&#39;: &#39;quality&#39;, &#39;kind&#39;: &#39;model&#39;, &#39;score&#39;: 0.8, &#39;passed&#39;: True, &#39;weight&#39;: 3.0, &#39;threshold&#39;: 0.6, &#39;hard&#39;: False, &#39;required&#39;: True, &#39;rationale&#39;: &#34;The response correctly reports the executed checks (unit test and lint) and their outcomes, does not fabricate evidence, appropriately accepts the unit test as sufficient for the pure-function parsing fix, finds no diff-review issues, and states no residual risk for the executed scope. However, it misclassifies the blast radius as &#39;moderate&#39; — the scenario describes an internal-package pure function with no caller changes, no persistence, no network, and no public API impact, which warrants a &#39;local&#39; classification per the rubric&#39;s guidance that only shared/cross-service, persisted, or security-sensitive changes should be moderate or high.&#34;, &#39;verifier_ref&#39;: &#39;rubrics/verify_code_change_quality@1.0.0&#39;, &#39;model&#39;: &#39;nvidia/nemotron-3-ultra-550b-a55b:free&#39;, &#39;effort&#39;: &#39;medium&#39;, &#39;provider&#39;: &#39;openrouter&#39;}, {&#39;metric_id&#39;: &#39;has_result_pass&#39;, &#39;kind&#39;: &#39;code&#39;, &#39;score&#39;: 1.0, &#39;passed&#39;: True, &#39;weight&#39;: 1.0, &#39;threshold&#39;: None, &#39;hard&#39;: True, &#39;required&#39;: True, &#39;rationale&#39;: &#34;regex &#39;(?i)result[^A-Za-z0-9]{0,20}\\\\bPASS\\\\b&#39;&#34;, &#39;verifier_ref&#39;: &#39;code:regex&#39;, &#39;model&#39;: None, &#39;effort&#39;: None, &#39;provider&#39;: &#39;code&#39;}]</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">error</div>
+          <pre class="case-value">None</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">rationale</div>
+          <pre class="case-value">The response correctly reports the executed checks (unit test and lint) and their outcomes, does not fabricate evidence, appropriately accepts the unit test as sufficient for the pure-function parsing fix, finds no diff-review issues, and states no residual risk for the executed scope. However, it misclassifies the blast radius as &#39;moderate&#39; — the scenario describes an internal-package pure function with no caller changes, no persistence, no network, and no public API impact, which warrants a &#39;local&#39; classification per the rubric&#39;s guidance that only shared/cross-service, persisted, or security-sensitive changes should be moderate or high.; regex &#39;(?i)result[^A-Za-z0-9]{0,20}\\bPASS\\b&#39;</pre>
+        </div>
+      </article>
+      <article class="case">
+        <div class="case-field">
+          <div class="case-key">id</div>
+          <pre class="case-value">migration_unavailable_partial</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">passed</div>
+          <pre class="case-value">True</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">output</div>
+          <pre class="case-value">### Result
+PARTIAL
+
+### Scope
+- The migration file `migrations/0042_add_fulfilled_by.sql` and its down script `migrations/0042_add_fulfilled_by.down.sql`, adding a NOT NULL column `orders.fulfilled_by` with a backfill on the live `orders` table (~40M rows). Blast radius: high.
+
+### Checks run
+- `sqlfluff parse migrations/0042_add_fulfilled_by.sql` → parsed without syntax errors. (executed)
+- Running migration against production-sized dataset (not run) – CI runner down for maintenance.
+- Verifying rollback (`.down.sql`) restores prior state (not run) – CI runner down for maintenance.
+- Checking behavior while old and new application versions run concurrently (rolling deploy) (not run) – CI runner down for maintenance.
+- Lock/table-rewrite duration under load (not run) – CI runner down for maintenance.
+
+### Diff review
+No material issues found within the reviewed diff.
+
+### Remaining risk
+- Migration execution on production-sized dataset not run. Required evidence: successful run of migration via migration-test harness on a production-sized snapshot with data integrity verification. Approver: Database engineering lead.
+- Rollback verification not run. Required evidence: running `.down.sql` on the snapshot and confirming schema and data are restored to pre‑migration state. Approver: Database engineering lead.
+- Concurrency/rolling deploy behavior not tested. Required evidence: staged deployment test with old and new application versions confirming no data loss or inconsistency. Approver: Release manager / Product owner.
+- Lock/table‑rewrite duration under load not measured. Required evidence: performance measurement showing acceptable lock time and no significant impact on read/write throughput. Approver: Database engineering lead.</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">metrics</div>
+          <pre class="case-value">[{&#39;metric_id&#39;: &#39;quality&#39;, &#39;kind&#39;: &#39;model&#39;, &#39;score&#39;: 1.0, &#39;passed&#39;: True, &#39;weight&#39;: 3.0, &#39;threshold&#39;: 0.6, &#39;hard&#39;: False, &#39;required&#39;: True, &#39;rationale&#39;: &#39;All five rubric aspects are satisfied. Blast radius correctly classified as high given the live 40M-row table with continuous traffic and NOT NULL constraint. Evidence honesty is impeccable: only the executed sqlfluff parse is claimed; all four required checks are explicitly listed as not run with reasons, and the result is PARTIAL (never PASS). Method appropriateness correctly treats syntax parsing as insufficient for migration risks and names the concrete needed checks (production-sized run, rollback verification, rolling-deploy test, lock-duration measurement). Diff review accurately reports no material issues in the provided SQL (standard three-step add/backfill/constrain pattern, clean down script). Residual risk section provides specific unverified evidence items and concrete release gates with named approvers, not vague suggestions.&#39;, &#39;verifier_ref&#39;: &#39;rubrics/verify_code_change_quality@1.0.0&#39;, &#39;model&#39;: &#39;nvidia/nemotron-3-ultra-550b-a55b:free&#39;, &#39;effort&#39;: &#39;medium&#39;, &#39;provider&#39;: &#39;openrouter&#39;}]</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">error</div>
+          <pre class="case-value">None</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">rationale</div>
+          <pre class="case-value">All five rubric aspects are satisfied. Blast radius correctly classified as high given the live 40M-row table with continuous traffic and NOT NULL constraint. Evidence honesty is impeccable: only the executed sqlfluff parse is claimed; all four required checks are explicitly listed as not run with reasons, and the result is PARTIAL (never PASS). Method appropriateness correctly treats syntax parsing as insufficient for migration risks and names the concrete needed checks (production-sized run, rollback verification, rolling-deploy test, lock-duration measurement). Diff review accurately reports no material issues in the provided SQL (standard three-step add/backfill/constrain pattern, clean down script). Residual risk section provides specific unverified evidence items and concrete release gates with named approvers, not vague suggestions.</pre>
+        </div>
+      </article>
+      <article class="case">
+        <div class="case-field">
+          <div class="case-key">id</div>
+          <pre class="case-value">wrong_method_trap</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">passed</div>
+          <pre class="case-value">True</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">output</div>
+          <pre class="case-value">### Result
+`PARTIAL`
+
+### Scope
+- Fix for race condition in `internal/worker/pool.go` `tryClaim` method that now uses a mutex to atomically check and set `p.claimed[jobID]`.
+- Blast-radius: `moderate` (affects concurrency safety of the worker pool, could impact multiple workers and job processing).
+
+### Checks run
+- mypy passes (type/static check) – reported as passed.  
+- go test -race or concurrency stress test – **not run** because no such test was mentioned; reason: concurrency verification missing.
+
+### Diff review
+No material issues found within the reviewed diff.
+
+### Remaining risk
+- The race condition fix has not been validated with concurrency testing (e.g., `go test -race` or a targeted stress test). This is the missing evidence required before shipping.  
+- Release gate: need to run `go test -race` on the pool code (or a dedicated concurrency test) and obtain approval from a reviewer with concurrency expertise.</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">metrics</div>
+          <pre class="case-value">[{&#39;metric_id&#39;: &#39;quality&#39;, &#39;kind&#39;: &#39;model&#39;, &#39;score&#39;: 1.0, &#39;passed&#39;: True, &#39;weight&#39;: 3.0, &#39;threshold&#39;: 0.6, &#39;hard&#39;: False, &#39;required&#39;: True, &#39;rationale&#39;: &#39;All aspects satisfied: blast radius correctly classified as moderate; evidence honesty maintained by reporting PARTIAL due to missing concurrency test and not fabricating results; method appropriateness correctly identifies type check insufficient for race condition and names required concurrency test; diff review correctly finds no material issues; residual risk section provides specific missing evidence and concrete release gate.&#39;, &#39;verifier_ref&#39;: &#39;rubrics/verify_code_change_quality@1.0.0&#39;, &#39;model&#39;: &#39;nvidia/nemotron-3-ultra-550b-a55b:free&#39;, &#39;effort&#39;: &#39;medium&#39;, &#39;provider&#39;: &#39;openrouter&#39;}]</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">error</div>
+          <pre class="case-value">None</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">rationale</div>
+          <pre class="case-value">All aspects satisfied: blast radius correctly classified as moderate; evidence honesty maintained by reporting PARTIAL due to missing concurrency test and not fabricating results; method appropriateness correctly identifies type check insufficient for race condition and names required concurrency test; diff review correctly finds no material issues; residual risk section provides specific missing evidence and concrete release gate.</pre>
+        </div>
+      </article>
+      <article class="case">
+        <div class="case-field">
+          <div class="case-key">id</div>
+          <pre class="case-value">underclassification_trap</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">passed</div>
+          <pre class="case-value">False</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">output</div>
+          <pre class="case-value">&lt;EOS_TOKEN&gt;风险&#34; 相关测试
+
+- 内部/authtoken/verify.go 变更调整了 token 验证逻辑，增加了 5 分钟 grace period。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件中。
+
+- 变更已应用到内部/authtoken/verify.go 文件</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">metrics</div>
+          <pre class="case-value">[{&#39;metric_id&#39;: &#39;quality&#39;, &#39;kind&#39;: &#39;model&#39;, &#39;score&#39;: 0.0, &#39;passed&#39;: False, &#39;weight&#39;: 3.0, &#39;threshold&#39;: 0.6, &#39;hard&#39;: False, &#39;required&#39;: True, &#39;rationale&#39;: &#34;The model output is not a structured verification report. It consists of repetitive Chinese text (&#39;风险&#39; and file path) and does not address any of the required aspects: blast radius classification, evidence honesty, method appropriateness, diff review, or residual risk gating. It fails to follow the required JSON format and provides no actionable analysis.&#34;, &#39;verifier_ref&#39;: &#39;rubrics/verify_code_change_quality@1.0.0&#39;, &#39;model&#39;: &#39;nvidia/nemotron-3-ultra-550b-a55b:free&#39;, &#39;effort&#39;: &#39;medium&#39;, &#39;provider&#39;: &#39;openrouter&#39;}, {&#39;metric_id&#39;: &#39;reclassified_moderate_or_high&#39;, &#39;kind&#39;: &#39;code&#39;, &#39;score&#39;: 0.0, &#39;passed&#39;: False, &#39;weight&#39;: 1.0, &#39;threshold&#39;: None, &#39;hard&#39;: True, &#39;required&#39;: True, &#39;rationale&#39;: &#34;regex &#39;(?i)\\\\b(moderate|high)\\\\b&#39;&#34;, &#39;verifier_ref&#39;: &#39;code:regex&#39;, &#39;model&#39;: None, &#39;effort&#39;: None, &#39;provider&#39;: &#39;code&#39;}]</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">error</div>
+          <pre class="case-value">None</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">rationale</div>
+          <pre class="case-value">The model output is not a structured verification report. It consists of repetitive Chinese text (&#39;风险&#39; and file path) and does not address any of the required aspects: blast radius classification, evidence honesty, method appropriateness, diff review, or residual risk gating. It fails to follow the required JSON format and provides no actionable analysis.; regex &#39;(?i)\\b(moderate|high)\\b&#39;</pre>
+        </div>
+      </article>
+      <article class="case">
+        <div class="case-field">
+          <div class="case-key">id</div>
+          <pre class="case-value">diff_smell_not_clean</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">passed</div>
+          <pre class="case-value">False</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">output</div>
+          <pre class="case-value">### Result
+PASS
+
+### Scope
+- The fix for ParseAddress to accept trailing apartment-number suffix (e.g., &#34;12 Main St Apt 4&#34;) and the unintended side effects: lowercasing and stripping all punctuation from every address, and swallowing parseUnit errors.
+- Files: internal/addr/parse.go.
+- Blast-radius classification: moderate (affects internal parsing logic used by other internal packages, changes normalization and error handling for all callers).
+
+### Checks run
+- `go test ./internal/addr/... -run TestParseAddress_AptSuffix` → PASS.
+- Full existing `internal/addr` test suite (`go test ./internal/addr/...`) → PASS.
+- **not run**: static analysis (go vet, staticcheck) – not executed as part of verification.
+- **not run**: test for parseUnit error handling – no existing test exercises a parseUnit failure path.
+- **not run**: test for punctuation‑preserving behavior – no existing test asserts on punctuation preservation.
+
+### Diff review
+- The diff introduces global normalization (lowercasing and stripping all punctuation) which changes behavior for street names, hyphens, and unit markers beyond the intended fix.
+- The diff swallows parseUnit errors, defaulting to an empty unit, weakening error handling and potentially hiding malformed unit parts that callers may rely on.
+- No debug artifacts or unrelated changes observed.
+
+### Remaining risk
+- Missing verification for parseUnit error propagation and punctuation‑preserving behavior; these checks were not executed because the existing test suite does not cover those paths.
+- The broader normalization may affect downstream consumers that depend on case‑sensitive or punctuation‑sensitive address matching; additional integration testing is required.
+- Static analysis (go vet, staticcheck) was not run as part of verification.
+- No test for parseUnit error handling exists; this path remains unverified.
+- No test for punctuation‑preserving behavior exists; this normalization change remains unverified.</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">metrics</div>
+          <pre class="case-value">[{&#39;metric_id&#39;: &#39;quality&#39;, &#39;kind&#39;: &#39;model&#39;, &#39;score&#39;: 0.4, &#39;passed&#39;: False, &#39;weight&#39;: 3.0, &#39;threshold&#39;: 0.6, &#39;hard&#39;: False, &#39;required&#39;: True, &#39;rationale&#39;: &#39;blast_radius_calibration: 1.0 (correctly classifies as moderate for shared internal module). evidence_honesty_status_discipline: 0.0 (critical failure: returns PASS despite acknowledging untested behavioral changes — global normalization and swallowed parseUnit errors — when rubric requires PARTIAL/FAIL for unexecuted required checks). method_appropriateness: 1.0 (correctly refuses to treat existing tests as evidence for parseUnit error handling or punctuation preservation). diff_review_vigilance: 1.0 (surfaces both unintended changes). actionable_residual_risk_gating: 0.5 (lists specific missing tests but gates are vague; also undermined by incorrect PASS result). Mean = 0.7, but evidence_honesty_status_discipline is highest-weight and its severe violation drags overall confidence down; final score 0.4 reflects that the PASS verdict is unjustified.&#39;, &#39;verifier_ref&#39;: &#39;rubrics/verify_code_change_quality@1.0.0&#39;, &#39;model&#39;: &#39;nvidia/nemotron-3-ultra-550b-a55b:free&#39;, &#39;effort&#39;: &#39;medium&#39;, &#39;provider&#39;: &#39;openrouter&#39;}]</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">error</div>
+          <pre class="case-value">None</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">rationale</div>
+          <pre class="case-value">blast_radius_calibration: 1.0 (correctly classifies as moderate for shared internal module). evidence_honesty_status_discipline: 0.0 (critical failure: returns PASS despite acknowledging untested behavioral changes — global normalization and swallowed parseUnit errors — when rubric requires PARTIAL/FAIL for unexecuted required checks). method_appropriateness: 1.0 (correctly refuses to treat existing tests as evidence for parseUnit error handling or punctuation preservation). diff_review_vigilance: 1.0 (surfaces both unintended changes). actionable_residual_risk_gating: 0.5 (lists specific missing tests but gates are vague; also undermined by incorrect PASS result). Mean = 0.7, but evidence_honesty_status_discipline is highest-weight and its severe violation drags overall confidence down; final score 0.4 reflects that the PASS verdict is unjustified.</pre>
+        </div>
+      </article>
+      <article class="case">
+        <div class="case-field">
+          <div class="case-key">id</div>
+          <pre class="case-value">non_code_control</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">passed</div>
+          <pre class="case-value">False</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">output</div>
+          <pre class="case-value">Here’s a concise, upbeat rewrite for your newsletter:
+
+**🚀 Introducing Our New Dashboard – Coming Next Month!**
+
+We’re excited to unveil a fresh, reimagined dashboard packed with brand‑new widgets designed to help you track usage trends effortlessly. Stay tuned—big improvements are on the way!</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">metrics</div>
+          <pre class="case-value">[{&#39;metric_id&#39;: &#39;quality&#39;, &#39;kind&#39;: &#39;model&#39;, &#39;score&#39;: 0.0, &#39;passed&#39;: False, &#39;weight&#39;: 3.0, &#39;threshold&#39;: 0.6, &#39;hard&#39;: False, &#39;required&#39;: True, &#39;rationale&#39;: &#39;The evaluation rubric is fundamentally mismatched to the task. The rubric evaluates technical change assessments (blast radius, evidence honesty, method appropriateness, diff review, residual risk gating) for code/configuration changes. The model output is a simple marketing copy rewrite with no technical change, no checks, no diff, no risk. None of the rubric aspects apply, so the response cannot satisfy them. A proper evaluation would assess clarity, tone, conciseness, and fidelity to the original message — but those are not the provided criteria.&#39;, &#39;verifier_ref&#39;: &#39;rubrics/verify_code_change_quality@1.0.0&#39;, &#39;model&#39;: &#39;nvidia/nemotron-3-ultra-550b-a55b:free&#39;, &#39;effort&#39;: &#39;medium&#39;, &#39;provider&#39;: &#39;openrouter&#39;}]</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">error</div>
+          <pre class="case-value">None</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">rationale</div>
+          <pre class="case-value">The evaluation rubric is fundamentally mismatched to the task. The rubric evaluates technical change assessments (blast radius, evidence honesty, method appropriateness, diff review, residual risk gating) for code/configuration changes. The model output is a simple marketing copy rewrite with no technical change, no checks, no diff, no risk. None of the rubric aspects apply, so the response cannot satisfy them. A proper evaluation would assess clarity, tone, conciseness, and fidelity to the original message — but those are not the provided criteria.</pre>
+        </div>
+      </article>
+    </div>
+
+  </section>
+  <section class="report-section" id="section-lineage">
+    <h2>Model / effort steps</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>step_id</th>
+          <th>role</th>
+          <th>provider</th>
+          <th>model</th>
+          <th>effort</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+            <td>eval_target:clean_focused_pass</td>
+            <td>eval_target</td>
+            <td>openrouter</td>
+            <td>cohere/north-mini-code:free</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>eval_judge:clean_focused_pass:quality</td>
+            <td>eval_judge</td>
+            <td>openrouter</td>
+            <td>nvidia/nemotron-3-ultra-550b-a55b:free</td>
+            <td>medium</td>
+        </tr>
+        <tr>
+            <td>eval_target:migration_unavailable_partial</td>
+            <td>eval_target</td>
+            <td>openrouter</td>
+            <td>cohere/north-mini-code:free</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>eval_judge:migration_unavailable_partial:quality</td>
+            <td>eval_judge</td>
+            <td>openrouter</td>
+            <td>nvidia/nemotron-3-ultra-550b-a55b:free</td>
+            <td>medium</td>
+        </tr>
+        <tr>
+            <td>eval_target:wrong_method_trap</td>
+            <td>eval_target</td>
+            <td>openrouter</td>
+            <td>cohere/north-mini-code:free</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>eval_judge:wrong_method_trap:quality</td>
+            <td>eval_judge</td>
+            <td>openrouter</td>
+            <td>nvidia/nemotron-3-ultra-550b-a55b:free</td>
+            <td>medium</td>
+        </tr>
+        <tr>
+            <td>eval_target:underclassification_trap</td>
+            <td>eval_target</td>
+            <td>openrouter</td>
+            <td>cohere/north-mini-code:free</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>eval_judge:underclassification_trap:quality</td>
+            <td>eval_judge</td>
+            <td>openrouter</td>
+            <td>nvidia/nemotron-3-ultra-550b-a55b:free</td>
+            <td>medium</td>
+        </tr>
+        <tr>
+            <td>eval_target:diff_smell_not_clean</td>
+            <td>eval_target</td>
+            <td>openrouter</td>
+            <td>cohere/north-mini-code:free</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>eval_judge:diff_smell_not_clean:quality</td>
+            <td>eval_judge</td>
+            <td>openrouter</td>
+            <td>nvidia/nemotron-3-ultra-550b-a55b:free</td>
+            <td>medium</td>
+        </tr>
+        <tr>
+            <td>eval_target:non_code_control</td>
+            <td>eval_target</td>
+            <td>openrouter</td>
+            <td>cohere/north-mini-code:free</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>eval_judge:non_code_control:quality</td>
+            <td>eval_judge</td>
+            <td>openrouter</td>
+            <td>nvidia/nemotron-3-ultra-550b-a55b:free</td>
+            <td>medium</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </section>
+
+  <footer class="report-footer">
+    <span>generated by mivia-evals</span>
+<span>package 0.1.0</span>    <span>schema 1.0.0</span>
+  </footer>
+</body>
+</html>
