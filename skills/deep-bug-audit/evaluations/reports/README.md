@@ -57,7 +57,9 @@ end-to-end audit quality.
 
 ## Reports
 
-- Baseline that first exposed the failures: [v1.0.0-baseline-b61b62dd.html](v1.0.0-baseline-b61b62dd.html)
-- v1.0.0 comparison runs: [a](v1.0.0-run-a-ffa5b065.html), [b](v1.0.0-run-b-580de8a2.html), [c](v1.0.0-run-c-410252e6.html)
-- v1.1.0 comparison runs: [a](v1.1.0-run-a-01590ade.html), [b](v1.1.0-run-b-479714d8.html)
-- v1.2.0 comparison runs: [a](v1.2.0-run-a-d6dce6ab.html), [b](v1.2.0-run-b-17a9a126.html), [c](v1.2.0-run-c-550e148e.html)
+Each is a self-contained HTML file in this directory; open it directly.
+
+- Baseline that first exposed the failures: `v1.0.0-baseline-b61b62dd.html`
+- v1.0.0 comparison runs: `v1.0.0-run-a-ffa5b065.html`, `v1.0.0-run-b-580de8a2.html`, `v1.0.0-run-c-410252e6.html`
+- v1.1.0 comparison runs: `v1.1.0-run-a-01590ade.html`, `v1.1.0-run-b-479714d8.html`
+- v1.2.0 comparison runs: `v1.2.0-run-a-d6dce6ab.html`, `v1.2.0-run-b-17a9a126.html`, `v1.2.0-run-c-550e148e.html`
