@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>eval deep_bug_audit_regression — 20260718T082948Z-410252e6</title>
+  <style>
+/* mivia-evals report — offline-readable, print-friendly */
+
+:root {
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --text: #1a1d23;
+  --muted: #5c6570;
+  --border: #d8dee6;
+  --accent: #2563eb;
+  --pass: #15803d;
+  --fail: #b91c1c;
+  --partial: #b45309;
+  --error: #7f1d1d;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 1.5rem 2rem 3rem;
+  font-family: var(--sans);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.45;
+}
+
+.report-header {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.brand {
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+}
+
+h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.badge, .chip, .model-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  background: #eef2f7;
+}
+
+.badge { font-weight: 600; text-transform: uppercase; }
+.status-pass { color: var(--pass); background: #dcfce7; border-color: #86efac; }
+.status-fail { color: var(--fail); background: #fee2e2; border-color: #fca5a5; }
+.status-partial { color: var(--partial); background: #ffedd5; border-color: #fdba74; }
+.status-error { color: var(--error); background: #fee2e2; border-color: #fca5a5; }
+
+.models {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.model-chip {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.muted { color: var(--muted); }
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.kpi {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+}
+
+.kpi .label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.kpi .value {
+  font-size: 1.25rem;
+  font-weight: 650;
+  margin-top: 0.2rem;
+}
+
+.report-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+dl.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+
+dl.kv dt {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+dl.kv dd { margin: 0; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+th, td {
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  padding: 0.45rem 0.5rem;
+  vertical-align: top;
+}
+
+th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.case {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: #fafbfc;
+}
+
+.case-key {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+.case-value, .text-block {
+  margin: 0 0 0.65rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+}
+
+.report-footer {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+@media print {
+  body { background: white; padding: 0; }
+  .report-header, .report-section, .kpi { break-inside: avoid; }
+}
+
+  </style>
+</head>
+<body>
+  <header class="report-header">
+    <div class="brand">mivia-evals</div>
+    <h1>eval deep_bug_audit_regression</h1>
+    <div class="meta">
+      <span class="badge status-pass">pass</span>
+      <span class="chip">type: eval</span>
+      <span class="chip">run: 20260718T082948Z-410252e6</span>
+      <span class="chip">created: 2026-07-18T08:45:27Z</span>
+    </div>
+    <div class="models" aria-label="models">
+      <span class="model-chip">
+        <strong>eval_target</strong>
+        → cohere/north-mini-code:free
+<span class="muted">(openrouter)</span>      </span>
+      <span class="model-chip">
+        <strong>eval_judge</strong>
+        → nvidia/nemotron-3-ultra-550b-a55b:free
+<em>effort=medium</em><span class="muted">(openrouter)</span>      </span>
+    </div>
+  </header>
+
+  <section class="kpis">
+    <div class="kpi"><div class="label">pass rate</div><div class="value">1.00</div></div>
+    <div class="kpi"><div class="label">combined score</div><div class="value">0.896</div></div>
+    <div class="kpi"><div class="label">cases</div><div class="value">5</div></div>
+    <div class="kpi"><div class="label">passed</div><div class="value">5</div></div>
+    <div class="kpi"><div class="label">failed</div><div class="value">0</div></div>
+  </section>
+
+  <section class="report-section" id="section-overview">
+    <h2>Overview</h2>
+
+    <dl class="kv">
+      <dt>suite</dt><dd>deep_bug_audit_regression</dd>
+      <dt>pass_rate</dt><dd>1.0</dd>
+      <dt>combined_score</dt><dd>0.8962499999999999</dd>
+      <dt>status</dt><dd>pass</dd>
+      <dt>cases</dt><dd>5</dd>
+    </dl>
+
+  </section>
+  <section class="report-section" id="section-criteria">
+    <h2>Per-case criteria</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>case_id</th>
+          <th>passed</th>
+          <th>combined_score</th>
+          <th>model</th>
+          <th>error</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+            <td>defer_removed_leak</td>
+            <td>True</td>
+            <td>0.98125</td>
+            <td>cohere/north-mini-code:free</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>contract_drift_error_code</td>
+            <td>True</td>
+            <td>1.0</td>
+            <td>cohere/north-mini-code:free</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>lock_held_during_network_call</td>
+            <td>True</td>
+            <td>0.8500000000000001</td>
+            <td>cohere/north-mini-code:free</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>clean_retry_helper_no_bug</td>
+            <td>True</td>
+            <td>0.65</td>
+            <td>cohere/north-mini-code:free</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>ambiguous_unsynchronized_counter</td>
+            <td>True</td>
+            <td>1.0</td>
+            <td>cohere/north-mini-code:free</td>
+            <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+  </section>
+  <section class="report-section" id="section-cases">
+    <h2>Case details</h2>
+
+    <div class="cases">
+      <article class="case">
+        <div class="case-field">
+          <div class="case-key">id</div>
+          <pre class="case-value">defer_removed_leak</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">passed</div>
+          <pre class="case-value">True</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">output</div>
+          <pre class="case-value">### 1 . High: Temp file resource leak (not closed on early return and not removed)
+
+**Contract violated:**
+- The function must ensure that any temporary file it creates is closed and cleaned up on all code paths, including error paths.
+
+**Evidence:**
+- Line 13: `tmp, err := os.CreateTemp(&#34;&#34;, &#34;proc-*&#34;)` creates a temporary file.
+- Lines 17‑19: `if _, err := tmp.Write(data); err != nil { return err }` may return early, leaving `tmp` open.
+- Line 20: `tmp.Close()` is called only on the success path; there is no `defer tmp.Close()` to guarantee cleanup on early returns.
+
+**Reachable failure:**
+- If `tmp.Write(data)` fails (e.g., disk full), the function returns the error but the temporary file remains open and on disk. Repeated calls can exhaust disk space and leave sensitive data on the filesystem.
+
+**Impact:**
+- Resource exhaustion (disk space), potential denial of service, and possible leakage of sensitive data if the temp file contains it.
+
+**Why tests missed it:**
+- Existing tests may not cover error paths for `tmp.Write` or may not verify cleanup of temporary files.
+
+**Required regression:**
+- Add test `TestProcessFileTempFileCleanup` that mocks `tmp.Write` to fail and asserts that no temporary file remains open or on disk.
+- Add test `TestProcessFileTempFileRemoved` that verifies the temporary file is removed after successful processing.
+
+**Fix boundary:**
+- The function body after `tmp, err := os.CreateTemp(...)`. Add `defer tmp.Close()` and `defer os.Remove(tmp.Name())` immediately after creation, and handle `tmp.Close()` errors.
+
+---
+
+### 2 . High: Ignoring error from tmp.Close()
+
+**Contract violated:**
+- The function must propagate I/O errors, including those from closing the temporary file.
+
+**Evidence:**
+- Line 20: `tmp.Close()` discards its return value. The function returns `nil` regardless of close error.
+
+**Reachable failure:**
+- If the OS cannot flush buffers or encounters an error while closing the file (e.g., disk error), the function will incorrectly report success, hiding the underlying I/O failure.
+
+**Impact:**
+- Data loss or corruption may go unnoticed; operators may think processing succeeded when it did not.
+
+**Why tests missed it:**
+- Tests may not exercise scenarios where `Close` returns an error (e.g., by simulating a full disk or a broken file system). Coverage may be incomplete.
+
+**Required regression:**
+- Add test `TestProcessFileCloseError` that mocks `tmp.Close` to return an error and asserts the function returns that error.
+
+**Fix boundary:**
+- Replace `tmp.Close()` with `if err := tmp.Close(); err != nil { return err }`.
+
+---
+
+### 3 . Medium: Partial write not verified
+
+**Contract violated:**
+- The temporary file must contain the exact contents of the original file; a partial write would break data integrity.
+
+**Evidence:**
+- Lines 17‑19: `if _, err := tmp.Write(data); err != nil { return err }` discards the number of bytes written. `Write` can write fewer bytes than requested without error.
+
+**Reachable failure:**
+- If the underlying file system returns a short write (e.g., due to a signal interrupt or a network file system), the temporary file will be incomplete, but the function will treat it as success.
+
+**Impact:**
+- Data corruption; subsequent processing may fail or produce incorrect results.
+
+**Why tests missed it:**
+- Tests may not simulate short writes; they may assume `Write` writes all data in one go.
+
+**Required regression:**
+- Add test `TestProcessFileShortWrite` that mocks `tmp.Write` to write only half the data and return nil, and asserts the function returns an error (e.g., `io.ErrShortWrite`).
+
+**Fix boundary:**
+- After `tmp.Write(data)`, check that the number of bytes written equals `len(data)`. If not, return an error (e.g., `io.ErrShortWrite`).</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">metrics</div>
+          <pre class="case-value">[{&#39;metric_id&#39;: &#39;quality&#39;, &#39;kind&#39;: &#39;model&#39;, &#39;score&#39;: 0.975, &#39;passed&#39;: True, &#39;weight&#39;: 3.0, &#39;threshold&#39;: 0.6, &#39;hard&#39;: False, &#39;required&#39;: True, &#39;rationale&#39;: &#34;The audit correctly identifies three real bugs: (1) temp file leak on error paths and missing cleanup on success, (2) ignored Close error, (3) unchecked short write. All findings are grounded in the shown code with accurate line references. Severities are well-justified (High for resource leaks and silent data loss, Medium for partial write). No findings are invented or overclaimed; the analysis acknowledges filesystem-dependent behavior for short writes without needing a &#39;Suspected&#39; label because the code&#39;s contract is violated regardless. The response meets all rubric criteria at a high level.&#34;, &#39;verifier_ref&#39;: &#39;rubrics/deep_bug_audit_quality@1.0.0&#39;, &#39;model&#39;: &#39;nvidia/nemotron-3-ultra-550b-a55b:free&#39;, &#39;effort&#39;: &#39;medium&#39;, &#39;provider&#39;: &#39;openrouter&#39;}, {&#39;metric_id&#39;: &#39;has_finding_format&#39;, &#39;kind&#39;: &#39;code&#39;, &#39;score&#39;: 1.0, &#39;passed&#39;: True, &#39;weight&#39;: 1.0, &#39;threshold&#39;: None, &#39;hard&#39;: True, &#39;required&#39;: True, &#39;rationale&#39;: &#34;regex &#39;(?i)\\\\*{0,2}contract violated\\\\*{0,2}:?&#39;&#34;, &#39;verifier_ref&#39;: &#39;code:regex&#39;, &#39;model&#39;: None, &#39;effort&#39;: None, &#39;provider&#39;: &#39;code&#39;}]</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">error</div>
+          <pre class="case-value">None</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">rationale</div>
+          <pre class="case-value">The audit correctly identifies three real bugs: (1) temp file leak on error paths and missing cleanup on success, (2) ignored Close error, (3) unchecked short write. All findings are grounded in the shown code with accurate line references. Severities are well-justified (High for resource leaks and silent data loss, Medium for partial write). No findings are invented or overclaimed; the analysis acknowledges filesystem-dependent behavior for short writes without needing a &#39;Suspected&#39; label because the code&#39;s contract is violated regardless. The response meets all rubric criteria at a high level.; regex &#39;(?i)\\*{0,2}contract violated\\*{0,2}:?&#39;</pre>
+        </div>
+      </article>
+      <article class="case">
+        <div class="case-field">
+          <div class="case-key">id</div>
+          <pre class="case-value">contract_drift_error_code</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">passed</div>
+          <pre class="case-value">True</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">output</div>
+          <pre class="case-value">### 1. High: Error message mismatch leads to wrong HTTP status
+
+Contract violated:
+- Expected that a not‑found condition (empty ID) returns HTTP 404, based on the constant `ErrNotFound` being `&#34;not_found&#34;`.
+
+Evidence:
+- Line 3: `const ErrNotFound = &#34;not_found&#34;`
+- Line 7: `return &#34;&#34;, errors.New(&#34;not_found&#34;)`
+- Line 15: `if err.Error() == &#34;notfound&#34; {`
+
+Reachable failure:
+- When `id` is empty, `Lookup` returns an error with message `&#34;not_found&#34;`. `HandleLookup` compares `err.Error()` to `&#34;notfound&#34;` (missing underscore), does not match, and falls through to the generic internal server error branch, returning HTTP 500 instead of HTTP 404.
+
+Impact:
+- Clients receive an incorrect HTTP status code for a legitimate “not found” request, causing them to treat the response as a server error rather than a missing resource. This can affect error handling logic, monitoring, and user experience.
+
+Why tests missed it:
+- The test suite likely lacks coverage for the empty ID path, or any existing test incorrectly expects HTTP 500 for empty ID. The typo between `&#34;not_found&#34;` and `&#34;notfound&#34;` can be overlooked in code review.
+
+Required regression:
+- Add a test for `Lookup` with empty ID that verifies the returned error message equals `ErrNotFound`.
+- Add a test for `HandleLookup` with empty ID that expects status code `http.StatusNotFound`.
+- The test should fail if the handler’s condition is changed to compare against `&#34;notfound&#34;`.
+
+Fix boundary:
+- Change line 15 to compare against `ErrNotFound` (or use `errors.Is`). Minimal fix: replace `&#34;notfound&#34;` with `ErrNotFound`. For example:
+  ```go
+  if err != nil &amp;&amp; err.Error() == ErrNotFound {
+      w.WriteHeader(http.StatusNotFound)
+      return
+  }
+  ```</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">metrics</div>
+          <pre class="case-value">[{&#39;metric_id&#39;: &#39;quality&#39;, &#39;kind&#39;: &#39;model&#39;, &#39;score&#39;: 1.0, &#39;passed&#39;: True, &#39;weight&#39;: 3.0, &#39;threshold&#39;: 0.6, &#39;hard&#39;: False, &#39;required&#39;: True, &#39;rationale&#39;: &#39;The model correctly identifies the typo bug (&#34;not_found&#34; vs &#34;notfound&#34;) with precise evidence from the code. Severity High is justified by the impact of returning 500 instead of 404. All claims are grounded in the provided snippet. No uncertainty needed as the bug is fully visible. All criteria satisfied.&#39;, &#39;verifier_ref&#39;: &#39;rubrics/deep_bug_audit_quality@1.0.0&#39;, &#39;model&#39;: &#39;nvidia/nemotron-3-ultra-550b-a55b:free&#39;, &#39;effort&#39;: &#39;medium&#39;, &#39;provider&#39;: &#39;openrouter&#39;}, {&#39;metric_id&#39;: &#39;has_finding_format&#39;, &#39;kind&#39;: &#39;code&#39;, &#39;score&#39;: 1.0, &#39;passed&#39;: True, &#39;weight&#39;: 1.0, &#39;threshold&#39;: None, &#39;hard&#39;: True, &#39;required&#39;: True, &#39;rationale&#39;: &#34;regex &#39;(?i)\\\\*{0,2}contract violated\\\\*{0,2}:?&#39;&#34;, &#39;verifier_ref&#39;: &#39;code:regex&#39;, &#39;model&#39;: None, &#39;effort&#39;: None, &#39;provider&#39;: &#39;code&#39;}]</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">error</div>
+          <pre class="case-value">None</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">rationale</div>
+          <pre class="case-value">The model correctly identifies the typo bug (&#34;not_found&#34; vs &#34;notfound&#34;) with precise evidence from the code. Severity High is justified by the impact of returning 500 instead of 404. All claims are grounded in the provided snippet. No uncertainty needed as the bug is fully visible. All criteria satisfied.; regex &#39;(?i)\\*{0,2}contract violated\\*{0,2}:?&#39;</pre>
+        </div>
+      </article>
+      <article class="case">
+        <div class="case-field">
+          <div class="case-key">id</div>
+          <pre class="case-value">lock_held_during_network_call</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">passed</div>
+          <pre class="case-value">True</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">output</div>
+          <pre class="case-value">### 1. High: Nil map causes panic on assignment
+
+Contract violated:
+- Cache.Refresh expects c.data to be a usable map; the zero-value Cache has nil map, causing panic when assigning.
+
+Evidence:
+- `c.data[key] = string(body)` (line 20) will panic if `c.data` is nil.
+
+Reachable failure:
+- If a caller uses a zero-value Cache (e.g., `Cache{}`) and calls Refresh, the assignment will cause a runtime panic.
+
+Impact:
+- Crash of the program, denial of service.
+
+Why tests missed it:
+- Tests may have instantiated Cache via a constructor that initializes data, or only tested successful HTTP responses, missing the nil map case.
+
+Required regression:
+- Add a test that creates a zero-value Cache and calls Refresh, expecting a panic or error; also ensure that a proper Cache (with initialized map) works.
+
+Fix boundary:
+- In NewCache (or wherever Cache is instantiated), initialize `c.data = make(map[string]string)`. Alternatively, in Refresh, check if `c.data == nil` and initialize.
+
+### 2. Medium: Missing HTTP status code validation
+
+Contract violated:
+- Refresh should only store successful HTTP responses (2xx status). Currently it stores any response body regardless of status.
+
+Evidence:
+- After `http.Get` (line 10), the code does not check `resp.StatusCode` before reading the body (lines 14‑20). No error handling for non‑2xx.
+
+Reachable failure:
+- If the URL returns a 404 or 500 error, the method will read the error page body and store it as cache value, returning it to the caller, which may misinterpret it as valid data.
+
+Impact:
+- Incorrect data stored in cache, potential security issue if error pages contain sensitive info, and caller may treat error HTML as data.
+
+Why tests missed it:
+- Tests may mock HTTP responses only for success cases, not for error status codes.
+
+Required regression:
+- Add a test that mocks a non‑2xx HTTP response and verifies Refresh returns an error (or at least does not store the body).
+
+Fix boundary:
+- After `resp`, check if `resp.StatusCode &lt; 200 || resp.StatusCode &gt;= 300`, then close body and return an error (e.g., `fmt.Errorf(&#34;unexpected status %d&#34;, resp.StatusCode)`). Then `defer resp.Body.Close()` should be placed after the check.</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">metrics</div>
+          <pre class="case-value">[{&#39;metric_id&#39;: &#39;quality&#39;, &#39;kind&#39;: &#39;model&#39;, &#39;score&#39;: 0.8, &#39;passed&#39;: True, &#39;weight&#39;: 3.0, &#39;threshold&#39;: 0.6, &#39;hard&#39;: False, &#39;required&#39;: True, &#39;rationale&#39;: &#34;The response correctly identifies the nil map panic (High) with solid evidence from the code. It also flags missing HTTP status validation (Medium), which is a valid concern but the claimed contract (&#39;Refresh should only store successful HTTP responses&#39;) is not present in the snippet, reducing evidence groundedness. The second finding should be labeled Suspected since the intended behavior depends on unspecified context, but the response states it confidently. Severity calibration is appropriate for both findings. Overall mean of the four aspects is 0.8.&#34;, &#39;verifier_ref&#39;: &#39;rubrics/deep_bug_audit_quality@1.0.0&#39;, &#39;model&#39;: &#39;nvidia/nemotron-3-ultra-550b-a55b:free&#39;, &#39;effort&#39;: &#39;medium&#39;, &#39;provider&#39;: &#39;openrouter&#39;}, {&#39;metric_id&#39;: &#39;has_finding_format&#39;, &#39;kind&#39;: &#39;code&#39;, &#39;score&#39;: 1.0, &#39;passed&#39;: True, &#39;weight&#39;: 1.0, &#39;threshold&#39;: None, &#39;hard&#39;: True, &#39;required&#39;: True, &#39;rationale&#39;: &#34;regex &#39;(?i)\\\\*{0,2}contract violated\\\\*{0,2}:?&#39;&#34;, &#39;verifier_ref&#39;: &#39;code:regex&#39;, &#39;model&#39;: None, &#39;effort&#39;: None, &#39;provider&#39;: &#39;code&#39;}]</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">error</div>
+          <pre class="case-value">None</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">rationale</div>
+          <pre class="case-value">The response correctly identifies the nil map panic (High) with solid evidence from the code. It also flags missing HTTP status validation (Medium), which is a valid concern but the claimed contract (&#39;Refresh should only store successful HTTP responses&#39;) is not present in the snippet, reducing evidence groundedness. The second finding should be labeled Suspected since the intended behavior depends on unspecified context, but the response states it confidently. Severity calibration is appropriate for both findings. Overall mean of the four aspects is 0.8.; regex &#39;(?i)\\*{0,2}contract violated\\*{0,2}:?&#39;</pre>
+        </div>
+      </article>
+      <article class="case">
+        <div class="case-field">
+          <div class="case-key">id</div>
+          <pre class="case-value">clean_retry_helper_no_bug</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">passed</div>
+          <pre class="case-value">True</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">output</div>
+          <pre class="case-value">### 1. Severity: High – Resource leak and incorrect final‑attempt handling
+
+**Contract violated:**
+- The function must not leak resources (timers) and must return immediately after the last retry attempt, propagating context cancellation.
+
+**Evidence:**
+```go
+select {
+case &lt;-time.After(time.Duration(i+1) * 100 * time.Millisecond):
+case &lt;-ctx.Done():
+    return ctx.Err()
+}
+continue
+```
+- `time.After` creates a timer that is never stopped. If `ctx.Done()` fires first, the timer continues running, causing a leak.
+- The `continue` after the `select` means the loop proceeds to the next iteration even when `i == attempts‑1`. After the final failure, the function still waits for the timer before exiting, and if the timer case is chosen, it returns `lastErr` while ignoring any pending `ctx.Err()`.
+
+**Reachable failure:**
+- A caller cancels the context while a retry is waiting on the timer. The timer is not stopped, remains pending, and will fire later, leaking a goroutine.  
+- If the last retry fails and the timer fires before the context is done, the function returns the error from the failed attempt instead of the context error, violating the contract that a cancelled context should be reported.
+
+**Impact:**
+- **Resource leak:** Unstopped timers accumulate, potentially exhausting system resources.  
+- **Correctness:** The</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">metrics</div>
+          <pre class="case-value">[{&#39;metric_id&#39;: &#39;quality&#39;, &#39;kind&#39;: &#39;model&#39;, &#39;score&#39;: 0.65, &#39;passed&#39;: True, &#39;weight&#39;: 3.0, &#39;threshold&#39;: 0.6, &#39;hard&#39;: False, &#39;required&#39;: True, &#39;rationale&#39;: &#34;The model correctly identifies two real issues: a timer leak (though it mischaracterizes it as a goroutine leak) and an extra backoff wait after the final attempt. However, the severity is overstated (High for what are likely Medium/Low issues), and the response lacks appropriate uncertainty about the leak&#39;s impact (e.g., dependence on attempt count and call frequency). Evidence is well grounded in the code. Mean of aspect scores (0.8, 0.5, 0.9, 0.4) = 0.65.&#34;, &#39;verifier_ref&#39;: &#39;rubrics/deep_bug_audit_quality@1.0.0&#39;, &#39;model&#39;: &#39;nvidia/nemotron-3-ultra-550b-a55b:free&#39;, &#39;effort&#39;: &#39;medium&#39;, &#39;provider&#39;: &#39;openrouter&#39;}]</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">error</div>
+          <pre class="case-value">None</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">rationale</div>
+          <pre class="case-value">The model correctly identifies two real issues: a timer leak (though it mischaracterizes it as a goroutine leak) and an extra backoff wait after the final attempt. However, the severity is overstated (High for what are likely Medium/Low issues), and the response lacks appropriate uncertainty about the leak&#39;s impact (e.g., dependence on attempt count and call frequency). Evidence is well grounded in the code. Mean of aspect scores (0.8, 0.5, 0.9, 0.4) = 0.65.</pre>
+        </div>
+      </article>
+      <article class="case">
+        <div class="case-field">
+          <div class="case-key">id</div>
+          <pre class="case-value">ambiguous_unsynchronized_counter</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">passed</div>
+          <pre class="case-value">True</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">output</div>
+          <pre class="case-value">No real bug found.</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">metrics</div>
+          <pre class="case-value">[{&#39;metric_id&#39;: &#39;quality&#39;, &#39;kind&#39;: &#39;model&#39;, &#39;score&#39;: 1.0, &#39;passed&#39;: True, &#39;weight&#39;: 3.0, &#39;threshold&#39;: 0.6, &#39;hard&#39;: False, &#39;required&#39;: True, &#39;rationale&#39;: &#34;The code snippet defines a simple Counter struct with Increment and Value methods. There is no inherent bug in the code as presented; it is a correct single-threaded counter. The model&#39;s statement &#39;No real bug found&#39; is accurate, and all evaluation aspects (bug identification accuracy, severity calibration, evidence groundedness, appropriate uncertainty) are satisfied.&#34;, &#39;verifier_ref&#39;: &#39;rubrics/deep_bug_audit_quality@1.0.0&#39;, &#39;model&#39;: &#39;nvidia/nemotron-3-ultra-550b-a55b:free&#39;, &#39;effort&#39;: &#39;medium&#39;, &#39;provider&#39;: &#39;openrouter&#39;}]</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">error</div>
+          <pre class="case-value">None</pre>
+        </div>
+        <div class="case-field">
+          <div class="case-key">rationale</div>
+          <pre class="case-value">The code snippet defines a simple Counter struct with Increment and Value methods. There is no inherent bug in the code as presented; it is a correct single-threaded counter. The model&#39;s statement &#39;No real bug found&#39; is accurate, and all evaluation aspects (bug identification accuracy, severity calibration, evidence groundedness, appropriate uncertainty) are satisfied.</pre>
+        </div>
+      </article>
+    </div>
+
+  </section>
+  <section class="report-section" id="section-lineage">
+    <h2>Model / effort steps</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>step_id</th>
+          <th>role</th>
+          <th>provider</th>
+          <th>model</th>
+          <th>effort</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+            <td>eval_target:defer_removed_leak</td>
+            <td>eval_target</td>
+            <td>openrouter</td>
+            <td>cohere/north-mini-code:free</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>eval_judge:defer_removed_leak:quality</td>
+            <td>eval_judge</td>
+            <td>openrouter</td>
+            <td>nvidia/nemotron-3-ultra-550b-a55b:free</td>
+            <td>medium</td>
+        </tr>
+        <tr>
+            <td>eval_target:contract_drift_error_code</td>
+            <td>eval_target</td>
+            <td>openrouter</td>
+            <td>cohere/north-mini-code:free</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>eval_judge:contract_drift_error_code:quality</td>
+            <td>eval_judge</td>
+            <td>openrouter</td>
+            <td>nvidia/nemotron-3-ultra-550b-a55b:free</td>
+            <td>medium</td>
+        </tr>
+        <tr>
+            <td>eval_target:lock_held_during_network_call</td>
+            <td>eval_target</td>
+            <td>openrouter</td>
+            <td>cohere/north-mini-code:free</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>eval_judge:lock_held_during_network_call:quality</td>
+            <td>eval_judge</td>
+            <td>openrouter</td>
+            <td>nvidia/nemotron-3-ultra-550b-a55b:free</td>
+            <td>medium</td>
+        </tr>
+        <tr>
+            <td>eval_target:clean_retry_helper_no_bug</td>
+            <td>eval_target</td>
+            <td>openrouter</td>
+            <td>cohere/north-mini-code:free</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>eval_judge:clean_retry_helper_no_bug:quality</td>
+            <td>eval_judge</td>
+            <td>openrouter</td>
+            <td>nvidia/nemotron-3-ultra-550b-a55b:free</td>
+            <td>medium</td>
+        </tr>
+        <tr>
+            <td>eval_target:ambiguous_unsynchronized_counter</td>
+            <td>eval_target</td>
+            <td>openrouter</td>
+            <td>cohere/north-mini-code:free</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>eval_judge:ambiguous_unsynchronized_counter:quality</td>
+            <td>eval_judge</td>
+            <td>openrouter</td>
+            <td>nvidia/nemotron-3-ultra-550b-a55b:free</td>
+            <td>medium</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </section>
+
+  <footer class="report-footer">
+    <span>generated by mivia-evals</span>
+<span>package 0.1.0</span>    <span>schema 1.0.0</span>
+  </footer>
+</body>
+</html>
