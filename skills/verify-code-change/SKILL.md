@@ -52,11 +52,11 @@ The ladder is not automatically linear. Choose checks that cover the actual fail
 
 ## Result semantics
 
-- `PASS`: the required checks for the stated scope succeeded and no material issue was found within that scope.
-- `PARTIAL`: useful checks succeeded, but required evidence is unavailable, incomplete, or blocked.
+- `PASS`: the checks required at the change's blast radius were executed and passed, and no material issue was found within that scope. Do not downgrade a verified change to `PARTIAL` by citing higher-tier checks that were not required for its scope.
+- `PARTIAL`: a check that is required to verify the change at its blast radius is unavailable, incomplete, or blocked, or the diff review surfaced a material concern the executed checks did not resolve.
 - `FAIL`: a required check failed, the implementation does not satisfy the requirement, or a material regression was found.
 
-`PASS` does not prove that no defect exists. It describes the executed scope only.
+`PASS` does not prove that no defect exists; it describes the executed scope only. When the diff review finds a material defect in the change itself (for example a silently swallowed error or an untested broadened behavior), the result is `PARTIAL` or `FAIL`, not a clean `PASS`.
 
 ## Failure handling
 
@@ -81,7 +81,8 @@ The ladder is not automatically linear. Choose checks that cover the actual fail
 
 - command or method;
 - summarized result;
-- requirement or risk covered.
+- requirement or risk covered;
+- list a check as not run only if it was required at the change's blast radius and could not be executed; do not record higher-tier checks that were not required for the change as not run, since that invents a gap and muddies the result.
 
 ### Diff review
 
