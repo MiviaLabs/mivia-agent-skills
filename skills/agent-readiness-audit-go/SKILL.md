@@ -29,7 +29,7 @@ correctness, security, supply-chain, deployment, or production-readiness audit.
 
 Inspect Go application code only when it directly implements a named control or
 is the minimum boundary needed to verify one. Route reachable Go defects to
-`deep-bug-audit`; route verification of an implemented change to
+`bug-audit`; route verification of an implemented change to
 `verify-code-change`.
 
 ## Go-specific preflight

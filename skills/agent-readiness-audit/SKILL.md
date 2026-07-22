@@ -14,7 +14,7 @@ presence, documentation, coverage, or passing tests alone.
 
 This skill audits the repository control plane. It does not certify application
 correctness, general security, supply chain, production readiness, or release
-readiness. Route source-grounded bug hunts to `deep-bug-audit` and implemented
+readiness. Route source-grounded bug hunts to `bug-audit` and implemented
 change verification to `verify-code-change`.
 
 ## First decision

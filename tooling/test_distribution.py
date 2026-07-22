@@ -28,10 +28,8 @@ def assert_managed_install(project: Path) -> None:
     assert "BEGIN MIVIA" in (project / "CLAUDE.md").read_text(encoding="utf-8")
     assert (project / ".agents/skills/engineering-working-contract/.mivia-managed").exists()
     assert (project / ".claude/skills/verify-code-change/.mivia-managed").exists()
-    assert (project / ".agents/skills/deep-bug-audit/references/bug-taxonomy.md").exists()
-    assert (project / ".agents/skills/deep-bug-audit/scripts/audit_efficiency_score.py").exists()
-    assert (project / ".claude/skills/deep-bug-audit/references/bug-taxonomy.md").exists()
-    assert (project / ".claude/skills/deep-bug-audit/scripts/audit_efficiency_score.py").exists()
+    assert (project / ".agents/skills/bug-audit/evaluations/README.md").exists()
+    assert (project / ".claude/skills/bug-audit/evaluations/README.md").exists()
 
 
 def tree_state(root: Path) -> dict[str, tuple[str, bytes | None]]:
@@ -270,8 +268,8 @@ def test_installer(repository: Path, temporary: Path) -> None:
     assert not (project / ".agents/skills/.mivia-agent-skills.json").exists()
     assert not (project / ".agents/skills/engineering-working-contract").exists()
     assert not (project / ".claude/skills/verify-code-change").exists()
-    assert not (project / ".agents/skills/deep-bug-audit").exists()
-    assert not (project / ".claude/skills/deep-bug-audit").exists()
+    assert not (project / ".agents/skills/bug-audit").exists()
+    assert not (project / ".claude/skills/bug-audit").exists()
     assert protected_outside_skill.exists()
     assert unmarked_skill.exists()
     assert existing_backup.read_text(encoding="utf-8") == "keep\n"
@@ -334,7 +332,7 @@ def test_packages(repository: Path, temporary: Path) -> None:
             entries = set(archive.namelist())
         assert f"{name}/skill.md" in entries
         assert all(entry.startswith(f"{name}/") for entry in entries)
-        assert not any("evaluations/" in entry for entry in entries)
+        assert any("evaluations/" in entry for entry in entries)
         assert not any("agents/" in entry for entry in entries)
         source_examples = {
             relative.split("/", 1)[1]: content
@@ -352,9 +350,8 @@ def test_packages(repository: Path, temporary: Path) -> None:
             assert archive_name in entries
             with zipfile.ZipFile(archive_path) as archive:
                 assert archive.read(archive_name) == content
-        if name == "deep-bug-audit":
-            assert f"{name}/references/bug-taxonomy.md" in entries
-            assert f"{name}/scripts/audit_efficiency_score.py" in entries
+        if name == "bug-audit":
+            assert f"{name}/evaluations/README.md" in entries
 
 
 def main() -> int:

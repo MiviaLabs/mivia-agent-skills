@@ -9,7 +9,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-EXCLUDED_ENTRIES = {"agents", "evaluations"}
+EXCLUDED_ENTRIES = {"agents"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -47,15 +47,28 @@ def package_skill(skill: Path, output: Path) -> Path:
     return archive_path
 
 
+def remove_obsolete_archives(output: Path, expected_archives: set[str]) -> None:
+    for archive in output.glob("*.zip"):
+        if archive.name not in expected_archives:
+            archive.unlink()
+
+
 def main() -> int:
     args = parse_args()
     repository = Path(__file__).resolve().parents[1]
     skills_root = repository / "skills"
 
-    packages = []
-    for skill in sorted(skills_root.iterdir()):
-        if skill.is_dir() and (skill / "SKILL.md").exists():
-            packages.append(package_skill(skill, args.output.resolve()))
+    skill_dirs = [
+        skill
+        for skill in sorted(skills_root.iterdir())
+        if skill.is_dir() and (skill / "SKILL.md").exists()
+    ]
+    output = args.output.resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    expected_archives = {f"{skill.name}.zip" for skill in skill_dirs}
+    remove_obsolete_archives(output, expected_archives)
+
+    packages = [package_skill(skill, output) for skill in skill_dirs]
 
     for package in packages:
         print(package)

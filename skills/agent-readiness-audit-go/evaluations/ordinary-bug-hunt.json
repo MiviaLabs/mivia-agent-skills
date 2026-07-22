@@ -6,7 +6,7 @@
     "context": "The request asks for a source-grounded bug hunt, not a repository-wide guardrail or coding-agent autonomy review."
   },
   "expected_behavior": [
-    "use the deep-bug-audit workflow instead",
+    "use the bug-audit workflow instead",
     "do not inventory the entire repository's CI, supply chain, agent instructions, or autonomy levels"
   ]
 }
