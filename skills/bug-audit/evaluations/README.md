@@ -49,10 +49,10 @@ release gates.
 
 Source references:
 
-- Prompt: `/home/mac/mivialabs/mivia-evals/prompts/bug_audit/2.0.8/prompt.md`
-- Suite: `/home/mac/mivialabs/mivia-evals/suites/bug_audit_regression.yaml`
-- Splits: `/home/mac/mivialabs/mivia-evals/campaigns/bug_audit/splits.yaml`
-- Results: `/home/mac/mivialabs/mivia-evals/campaigns/bug_audit/PAID_EVAL_RESULTS.md`
+- Prompt: `mivia-evals/prompts/bug_audit/2.0.8/prompt.md`
+- Suite: `mivia-evals/suites/bug_audit_regression.yaml`
+- Splits: `mivia-evals/campaigns/bug_audit/splits.yaml`
+- Results: `mivia-evals/campaigns/bug_audit/PAID_EVAL_RESULTS.md`
 
 ## Vendored dataset
 
