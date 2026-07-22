@@ -1,0 +1,7 @@
+id: bug_audit
+version: "2.0.8"
+description: >-
+  bug_audit 2.0.7 + hard clean-default preamble: never invent resource leaks
+  when defer/with/try-with-resources/using is present; never invent SQLi on
+  bound parameters; never invent missing escape when escapeHtml is called.
+immutable: true

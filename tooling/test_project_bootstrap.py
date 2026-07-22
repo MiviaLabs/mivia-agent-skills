@@ -54,10 +54,8 @@ def test_integrated_bootstrap(repository: Path, temporary: Path) -> None:
     assert "mivia-image-generation" in expected_skills
     assert (root / "references/engineering-agent-working-contract.md").exists()
     assert (root / "references/doctrines/evidence-before-claims.md").exists()
-    assert (project / ".agents/skills/deep-bug-audit/references/bug-taxonomy.md").exists()
-    assert (project / ".agents/skills/deep-bug-audit/scripts/audit_efficiency_score.py").exists()
-    assert (project / ".claude/skills/deep-bug-audit/references/bug-taxonomy.md").exists()
-    assert (project / ".claude/skills/deep-bug-audit/scripts/audit_efficiency_score.py").exists()
+    assert (project / ".agents/skills/bug-audit/evaluations/README.md").exists()
+    assert (project / ".claude/skills/bug-audit/evaluations/README.md").exists()
     assert "mivia-agent-skills/references" in (project / "AGENTS.md").read_text(
         encoding="utf-8"
     )
@@ -78,7 +76,7 @@ def test_integrated_bootstrap(repository: Path, temporary: Path) -> None:
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["targets"] == ["claude"]
     assert (project / ".claude/skills/verify-code-change").exists()
-    assert (project / ".claude/skills/deep-bug-audit").exists()
+    assert (project / ".claude/skills/bug-audit").exists()
     assert not (project / ".agents/skills/verify-code-change").exists()
 
     run(installer(repository, project, "claude", uninstall=True))

@@ -101,7 +101,7 @@ transcripts or correctness guarantees.
 
 - [`skills/engineering-working-contract`](skills/engineering-working-contract/SKILL.md) - applies the operating contract to software engineering work
 - [`skills/verify-code-change`](skills/verify-code-change/SKILL.md) - verifies code changes according to risk and blast radius
-- [`skills/deep-bug-audit`](skills/deep-bug-audit/SKILL.md) - audits cross-boundary behavior for source-grounded bugs and regression gaps
+- [`skills/bug-audit`](skills/bug-audit/SKILL.md) - audits snippets, repositories, and diffs for reachable source-grounded bugs
 - [`skills/agent-readiness-audit`](skills/agent-readiness-audit/SKILL.md) - audits generic controls governing coding-agent actions and autonomy limits
 - [`skills/agent-readiness-audit-go`](skills/agent-readiness-audit-go/SKILL.md) - applies the generic readiness contract to Go repositories and Go-specific controls
 - [`skills/mivia-image-generation`](skills/mivia-image-generation/SKILL.md) - generates repository images in the established Mivia visual style
@@ -173,7 +173,7 @@ Then run the core checks directly when needed:
 
 ```bash
 python3 tooling/validate_repository.py
-python3 tooling/test_deep_bug_audit.py
+python3 tooling/test_bug_audit.py
 python3 tooling/test_distribution.py
 ```
 

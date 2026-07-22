@@ -55,6 +55,7 @@ def test_packages_all_supported_fixture_entries(repository: Path) -> None:
                 "fixture-skill/references/examples/01-example.md",
                 "fixture-skill/scripts/check.py",
                 "fixture-skill/assets/example.txt",
+                "fixture-skill/evaluations/positive.json",
             }
             assert archive.read("fixture-skill/skill.md") == b"# Fixture skill\n"
             assert archive.read("fixture-skill/support.txt") == b"included support\n"
@@ -63,6 +64,21 @@ def test_packages_all_supported_fixture_entries(repository: Path) -> None:
             assert archive.read("fixture-skill/references/examples/01-example.md") == b"example\n"
             assert archive.read("fixture-skill/scripts/check.py") == b"print('check')\n"
             assert archive.read("fixture-skill/assets/example.txt") == b"asset\n"
+            assert archive.read("fixture-skill/evaluations/positive.json") == b"{}\n"
+
+
+def test_packager_removes_obsolete_archives(repository: Path) -> None:
+    packager = load_packager(repository)
+    with tempfile.TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        skill = root / "fixture-skill"
+        output = root / "packages"
+        skill.mkdir(parents=True)
+        (skill / "SKILL.md").write_text("# Fixture skill\n", encoding="utf-8")
+        output.mkdir()
+        (output / "deep-bug-audit.zip").write_bytes(b"obsolete")
+        packager.remove_obsolete_archives(output, {"fixture-skill.zip"})
+        assert not (output / "deep-bug-audit.zip").exists()
 
 
 def main() -> int:

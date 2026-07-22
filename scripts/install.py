@@ -15,7 +15,7 @@ from pathlib import Path, PureWindowsPath
 
 BEGIN = "<!-- BEGIN MIVIA AGENTIC ENGINEERING CONTRACT -->"
 END = "<!-- END MIVIA AGENTIC ENGINEERING CONTRACT -->"
-RUNTIME_DIRS = ("references", "scripts", "assets")
+RUNTIME_DIRS = ("references", "scripts", "assets", "evaluations")
 SKILL_MARKER = ".mivia-managed"
 REGISTRY = ".mivia-agent-skills.json"
 MANAGED_ROOT = ".mivia-agent-skills"

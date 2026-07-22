@@ -79,10 +79,6 @@ def test_docs_build_renders_and_links_every_example() -> None:
                     "01-parser-regression-pass.md",
                     "02-database-migration-partial.md",
                 ),
-                "deep-bug-audit": (
-                    "01-current-session-cross-boundary.md",
-                    "02-targeted-auth-persistence-audit.md",
-                ),
                 "agent-readiness-audit": (
                     "01-bounded-action-readiness.md",
                     "02-repository-readiness-gated.md",
@@ -133,10 +129,6 @@ def test_docs_build_renders_and_links_every_example() -> None:
             "verify-code-change": (
                 "01-parser-regression-pass.md",
                 "02-database-migration-partial.md",
-            ),
-            "deep-bug-audit": (
-                "01-current-session-cross-boundary.md",
-                "02-targeted-auth-persistence-audit.md",
             ),
             "agent-readiness-audit": (
                 "01-bounded-action-readiness.md",
