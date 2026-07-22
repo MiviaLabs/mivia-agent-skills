@@ -1,7 +1,6 @@
 # How I Work with Evals and Prepare Skills at Mivia
 
-<!-- Hero image: drop hero.webp in this directory after generation.
-     Markdown: ![8-bit Mivia-style illustration of skill evaluation gates](hero.webp) -->
+> **Hero image:** add an 8-bit Mivia-style banner in this article directory after generation (see PR #12 image prompt). Not linked until the file exists.
 
 *I stopped trusting prompts that looked good. I started building engineering skills that have to prove they improved.*
 
