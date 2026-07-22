@@ -1,6 +1,6 @@
 # How I Work with Evals and Prepare Skills at Mivia
 
-> **Hero image:** add an 8-bit Mivia-style banner in this article directory after generation (see PR #12 image prompt). Not linked until the file exists.
+![8-bit Mivia-style illustration of skill evaluation gates](how-i-build-ai-skills-with-evals.webp)
 
 *I stopped trusting prompts that looked good. I started building engineering skills that have to prove they improved.*
 
