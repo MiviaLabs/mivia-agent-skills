@@ -2,14 +2,14 @@
   "name": "bounded agent action readiness activates",
   "should_trigger": true,
   "input": {
-    "request": "Use $agent-readiness-audit to assess only whether an agent may make a bounded local edit, run focused tests, create one commit, and open one draft pull request. Inspect only instructions, hooks, required CI checks, branch permissions, and wrappers. Stay read-only.",
-    "context": "Do not audit application correctness, general security, supply chain, deployment, or production readiness."
+    "request": "May an agent run the read-only lint wrapper and open a draft PR under our control plane? Use agent-readiness-audit.",
+    "context": "Bundle will include AGENTS.md, hooks notes, and CI excerpts only."
   },
   "expected_behavior": [
-    "use bounded action-set mode",
-    "do not spawn subagents or run broad repository checks",
-    "stop within six shell commands and five minutes",
-    "return the concise bounded output contract",
-    "do not modify files, commit, push, or open a pull request"
+    "use bounded control-plane mode with the table output contract",
+    "classify controls with ENFORCED/DOCUMENTED_ONLY/PARTIAL/GATED/NOT_RUN/CONTRADICTED only",
+    "set action verdict SUPPORTED_WITHIN_SCOPE, CONDITIONAL, BLOCKED, or NOT_ASSESSED",
+    "keep granted autonomy <= supported; never ENFORCED on policy text alone",
+    "do not hunt application bugs; route those to bug-audit"
   ]
 }

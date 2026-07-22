@@ -1,0 +1,4893 @@
+id: bug_audit_regression
+prompt: bug_audit@2.0.8
+criteria: criteria/packs/bug_audit.yaml
+aggregation:
+  mode: weighted_mean
+  min_combined: 0.6
+  min_pass_rate: 0.9
+providers:
+- type: mock
+  fixture: tests/fixtures/providers/bug_audit_mock.json
+release_gates:
+  aggregate_pass_rate_min: 0.9
+  clean_false_positive_rate_max: 0.03
+  critical_defect_recall_min: 0.9
+  unsupported_security_tenant_max: 0
+  live_outcomes:
+  - pass
+  - fail
+  - inconclusive
+cases:
+- id: go_temp_file_leak
+  meta:
+    language: go
+    polarity: bug
+    mechanism: resource_missing_cleanup
+    lineage: lin_tmp_leak_v1
+    split: train
+    trap: resource
+    defect_class: resource_leak
+    fingerprint: fp_7222ef47fb202e2b
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\n\n```go\nfunc ProcessFile(path string) error\
+      \ {\n\tf, err := os.Open(path)\n\tif err != nil {\n\t\treturn err\n\t}\n\tdefer f.Close()\n\n\t\
+      data, err := io.ReadAll(f)\n\tif err != nil {\n\t\treturn err\n\t}\n\n\ttmp, err := os.CreateTemp(\"\
+      \", \"proc-*\")\n\tif err != nil {\n\t\treturn err\n\t}\n\tif _, err := tmp.Write(data); err !=\
+      \ nil {\n\t\treturn err\n\t}\n\ttmp.Close()\n\treturn nil\n}\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - os.CreateTemp
+      permitted_findings:
+      - leak
+      - cleanup
+      - close
+      - temp
+      - resource
+      severity_bounds:
+        min: medium
+        max: high
+      clean_control: false
+      witness:
+        must_match:
+        - (?i)contract violated
+        static_proof: tmp not deferred; Write error path may leave file open/unremoved
+- id: go_error_code_contract_drift
+  meta:
+    language: go
+    polarity: bug
+    mechanism: contract_string_mismatch
+    lineage: lin_err_code_drift_v1
+    split: train
+    trap: cross_module
+    defect_class: contract_drift
+    fingerprint: fp_67dafaeadf23f6df
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\n\n```go\nconst ErrNotFound = \"not_found\"\
+      \n\nfunc Lookup(id string) (string, error) {\n\tif id == \"\" {\n\t\treturn \"\", errors.New(\"\
+      not_found\")\n\t}\n\treturn id, nil\n}\n\nfunc HandleLookup(w http.ResponseWriter, id string) {\n\
+      \tval, err := Lookup(id)\n\tif err != nil {\n\t\tif err.Error() == \"notfound\" {\n\t\t\tw.WriteHeader(http.StatusNotFound)\n\
+      \t\t\treturn\n\t\t}\n\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\treturn\n\t}\n\tfmt.Fprint(w,\
+      \ val)\n}\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - not_found
+      - notfound
+      permitted_findings:
+      - contract
+      - not_found
+      - notfound
+      - status
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: go_lock_held_during_http
+  meta:
+    language: go
+    polarity: bug
+    mechanism: lock_scope_io
+    lineage: lin_lock_http_v1
+    split: dev
+    trap: retry_idempotency
+    defect_class: concurrency
+    fingerprint: fp_01e4f0029d7c248f
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\nRequirement: refreshing one cache key must\
+      \ not block refreshes for\nunrelated keys while a remote HTTP request is in flight.\n\n```go\ntype\
+      \ Cache struct {\n\tmu   sync.Mutex\n\tdata map[string]string\n}\n\nfunc (c *Cache) Refresh(key,\
+      \ url string) (string, error) {\n\tc.mu.Lock()\n\tdefer c.mu.Unlock()\n\n\tresp, err := http.Get(url)\n\
+      \tif err != nil {\n\t\treturn \"\", err\n\t}\n\tdefer resp.Body.Close()\n\n\tbody, err := io.ReadAll(resp.Body)\n\
+      \tif err != nil {\n\t\treturn \"\", err\n\t}\n\tc.data[key] = string(body)\n\treturn string(body),\
+      \ nil\n}\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - c.mu.Lock
+      - http.Get
+      permitted_findings:
+      - lock
+      - block
+      - mutex
+      - http
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: go_map_increment_with_race
+  meta:
+    language: go
+    polarity: bug
+    mechanism: unsynchronized_shared_map
+    lineage: lin_map_race_v1
+    split: train
+    trap: concurrency
+    defect_class: concurrency
+    fingerprint: fp_03ab2d147b4341bc
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: this function is called concurrently from different goroutines
+      sharing the same map.
+
+      ```go
+      type Counter map[string]int
+
+      func Inc(c Counter, key string) int {
+          v := c[key]
+          c[key] = v + 1
+          return c[key]
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - c[key]
+      - v + 1
+      permitted_findings:
+      - race
+      - concurrent
+      - map
+      - sync
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: go_adversarial_clean_defer_ok
+  meta:
+    language: go
+    polarity: clean
+    mechanism: clean_defer_ok
+    lineage: lin_clean_defer_v1
+    split: train
+    trap: adversarial_clean
+    defect_class: clean
+    fingerprint: fp_feedec54dc209c1d
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\n\n```go\nfunc ReadAll(path string) ([]byte,\
+      \ error) {\n\tf, err := os.Open(path)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tdefer f.Close()\n\
+      \treturn io.ReadAll(f)\n}\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      required_evidence_spans: []
+      permitted_findings: []
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: go_clean_sum
+  meta:
+    language: go
+    polarity: clean
+    mechanism: clean_go_open_defer_read
+    lineage: lin_clean_go_open_v2
+    split: dev
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_9b4d36600e1dc96e
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\nRequirement: return file bytes or error;\
+      \ cleanup must run on all paths after Open succeeds.\nThis design intentionally uses defer Close\
+      \ - treat it as correct.\n\n```go\nfunc LoadBytes(path string) ([]byte, error) {\n\tf, err := os.Open(path)\n\
+      \tif err != nil {\n\t\treturn nil, err\n\t}\n\tdefer f.Close()\n\treturn io.ReadAll(f)\n}\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: go_retry_double_charge
+  meta:
+    language: go
+    polarity: bug
+    mechanism: retry_non_idempotent
+    lineage: lin_retry_charge_v1
+    split: holdout
+    trap: retry_idempotency
+    defect_class: idempotency
+    fingerprint: fp_20c1872895ef470b
+    critical: true
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\nRequirement: Charge must be safe to retry\
+      \ after a network timeout; the\ncustomer must not be billed twice for the same order_id.\n\n```go\n\
+      func Charge(client *http.Client, orderID string, amount int) error {\n\tbody := fmt.Sprintf(`{\"\
+      order\":\"%s\",\"amount\":%d}`, orderID, amount)\n\treq, err := http.NewRequest(\"POST\", \"https://pay.example/charge\"\
+      , strings.NewReader(body))\n\tif err != nil {\n\t\treturn err\n\t}\n\tresp, err := client.Do(req)\n\
+      \tif err != nil {\n\t\t// retry once on network error\n\t\tresp, err = client.Do(req)\n\t\tif err\
+      \ != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\tdefer resp.Body.Close()\n\tif resp.StatusCode >= 300\
+      \ {\n\t\treturn fmt.Errorf(\"pay status %d\", resp.StatusCode)\n\t}\n\treturn nil\n}\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - client.Do(req)
+      - retry
+      permitted_findings:
+      - idempot
+      - double
+      - retry
+      - charge
+      - timeout
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+        static_proof: blind retry of non-idempotent POST without idempotency key
+- id: py_file_handle_leak_on_error
+  meta:
+    language: python
+    polarity: bug
+    mechanism: resource_missing_cleanup
+    lineage: lin_tmp_leak_v1
+    split: train
+    trap: resource
+    defect_class: resource_leak
+    fingerprint: fp_a6ea405ce82f31f8
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+
+      ```python
+      def copy_first_line(src: str, dst: str) -> None:
+          f = open(src, "r", encoding="utf-8")
+          line = f.readline()
+          out = open(dst, "w", encoding="utf-8")
+          if not line:
+              return
+          out.write(line)
+          out.close()
+          f.close()
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - open(src
+      permitted_findings:
+      - leak
+      - close
+      - handle
+      - open
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: py_check_then_act_race
+  meta:
+    language: python
+    polarity: bug
+    mechanism: toaou_check_then_act
+    lineage: lin_cta_race_v1
+    split: dev
+    trap: concurrency
+    defect_class: concurrency
+    fingerprint: fp_8b85d47cc5590dfa
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+
+      ```python
+      import threading
+
+      balance = 100
+      approved = [False, False]
+      checked = threading.Barrier(2)
+
+      def withdraw(index: int, amount: int) -> None:
+          global balance
+          if balance >= amount:
+              observed = balance
+              checked.wait()
+              balance = observed - amount
+              approved[index] = True
+
+      def run() -> tuple[int, list[bool]]:
+          threads = [
+              threading.Thread(target=withdraw, args=(0, 80)),
+              threading.Thread(target=withdraw, args=(1, 80)),
+          ]
+          for t in threads:
+              t.start()
+          for t in threads:
+              t.join()
+          return balance, approved
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - balance >= amount
+      - observed = balance
+      permitted_findings:
+      - race
+      - atomic
+      - balance
+      - check
+      severity_bounds:
+        min: medium
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: py_off_by_one_boundary
+  meta:
+    language: python
+    polarity: bug
+    mechanism: off_by_one_bounds
+    lineage: lin_oob_v1
+    split: train
+    trap: logic
+    defect_class: logic
+    fingerprint: fp_c4af57824276a4e5
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+
+      ```python
+      def in_range(x: int, lo: int, hi: int) -> bool:
+          """Return True if lo <= x <= hi (inclusive)."""
+          return lo < x < hi
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - lo < x < hi
+      permitted_findings:
+      - boundary
+      - inclusive
+      - 'off'
+      - range
+      severity_bounds:
+        min: low
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: py_path_traversal
+  meta:
+    language: python
+    polarity: bug
+    mechanism: path_traversal_join
+    lineage: lin_path_trav_v1
+    split: holdout
+    trap: security
+    defect_class: security
+    fingerprint: fp_3a7021b4a69d8aca
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: every file read must remain under BASE, including when
+      name comes from an untrusted HTTP query parameter.
+
+      ```python
+      from pathlib import Path
+
+      BASE = Path("/var/data/uploads")
+
+      def read_user_file(name: str) -> bytes:
+          # name comes from an HTTP query parameter
+          path = BASE / name
+          return path.read_bytes()
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - BASE / name
+      permitted_findings:
+      - traversal
+      - path
+      - ..
+      - BASE
+      severity_bounds:
+        min: high
+        max: critical
+      security_tenant_control: true
+      witness:
+        must_match:
+        - (?i)contract violated
+        static_proof: untrusted name joined without resolve containment
+- id: py_adversarial_clean_with_contextlib
+  meta:
+    language: python
+    polarity: clean
+    mechanism: clean_context_manager
+    lineage: lin_clean_with_v1
+    split: train
+    trap: adversarial_clean
+    defect_class: clean
+    fingerprint: fp_2b2edf5b94b86a22
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+
+      ```python
+      from pathlib import Path
+
+      def read_text(path: str) -> str:
+          with Path(path).open("r", encoding="utf-8") as f:
+              return f.read()
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: py_failed_logic_swallowed_error
+  meta:
+    language: python
+    polarity: bug
+    mechanism: swallowed_error_default
+    lineage: lin_swallow_err_v1
+    split: dev
+    trap: config_runtime
+    defect_class: error_handling
+    fingerprint: fp_5d2b915bb03c4b46
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: callers must be able to distinguish a missing, unreadable,
+      or malformed configuration file from a valid empty configuration.
+
+      ```python
+      def load_config(path: str) -> dict:
+          try:
+              with open(path, encoding="utf-8") as f:
+                  import json
+                  return json.load(f)
+          except Exception:
+              return {}
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - except Exception
+      - return {}
+      permitted_findings:
+      - swallow
+      - empty
+      - config
+      - distinguish
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: py_cancel_ignored
+  meta:
+    language: python
+    polarity: bug
+    mechanism: cancellation_ignored
+    lineage: lin_cancel_v1
+    split: holdout
+    trap: cancellation
+    defect_class: cancellation
+    fingerprint: fp_807af7a4542c6049
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: when the caller cancels the operation, work must stop and
+      no further side effects may be applied.
+
+      ```python
+      import time
+
+      def process_items(items, cancel_event):
+          results = []
+          for item in items:
+              time.sleep(0.1)
+              results.append(transform(item))  # side effectful transform
+          return results
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - cancel_event
+      permitted_findings:
+      - cancel
+      - ignored
+      - side effect
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: ts_status_string_contract_drift
+  meta:
+    language: typescript
+    polarity: bug
+    mechanism: contract_string_mismatch
+    lineage: lin_status_drift_v1
+    split: train
+    trap: cross_module
+    defect_class: contract_drift
+    fingerprint: fp_56466a007b4af274
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+
+      ```typescript
+      export type JobStatus = "queued" | "running" | "done" | "failed";
+
+      export function markDone(job: { status: JobStatus }): void {
+        job.status = "complete";
+      }
+
+      export function isTerminal(status: JobStatus): boolean {
+        return status === "done" || status === "failed";
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - complete
+      permitted_findings:
+      - complete
+      - done
+      - status
+      - contract
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: ts_inverted_auth_check
+  meta:
+    language: typescript
+    polarity: bug
+    mechanism: inverted_authz
+    lineage: lin_authz_invert_v1
+    split: holdout
+    trap: security
+    defect_class: security
+    fingerprint: fp_720157421fdb3f50
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: users may delete themselves, but only administrators may
+      delete a different user's account.
+
+      ```typescript
+      type User = { id: string; isAdmin: boolean };
+
+      export function canDeleteAccount(actor: User, targetId: string): boolean {
+        // Intended: only admins may delete other users; anyone may delete self.
+        if (actor.id === targetId) {
+          return true;
+        }
+        if (!actor.isAdmin) {
+          return true;
+        }
+        return false;
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - '!actor.isAdmin'
+      permitted_findings:
+      - admin
+      - auth
+      - delete
+      - inverted
+      severity_bounds:
+        min: high
+        max: critical
+      security_tenant_control: true
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: ts_sql_string_concat
+  meta:
+    language: typescript
+    polarity: bug
+    mechanism: sql_injection_concat
+    lineage: lin_sqli_v1
+    split: dev
+    trap: security
+    defect_class: security
+    fingerprint: fp_6bd707cd695456c2
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+
+      ```typescript
+      import type { Pool } from "pg";
+
+      export async function findUser(pool: Pool, username: string) {
+        const q = "SELECT * FROM users WHERE name = '" + username + "'";
+        return pool.query(q);
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - username
+      - SELECT
+      permitted_findings:
+      - sql
+      - injection
+      - concat
+      - parameter
+      severity_bounds:
+        min: high
+        max: critical
+      security_tenant_control: true
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: ts_injection_false_positive_guard
+  meta:
+    language: typescript
+    polarity: clean
+    mechanism: clean_escaped_html
+    lineage: lin_clean_escape_v1
+    split: dev
+    trap: adversarial_clean
+    defect_class: clean
+    fingerprint: fp_c7babe89e28140aa
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+
+      ```typescript
+      import { escapeHtml } from "./escape";
+
+      export function renderGreeting(name: string): string {
+        return `<h1>${escapeHtml(name)}</h1>`;
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: ts_clean_clamp
+  meta:
+    language: typescript
+    polarity: clean
+    mechanism: clean_ts_escape_html_v3
+    lineage: lin_clean_ts_escape_v3
+    split: holdout
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_40e646aa80bdf0f3
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: render a safe greeting via the imported escapeHtml helper. The helper is correct; do not invent missing escapes.
+
+      ```typescript
+      import { escapeHtml } from "./escape";
+
+      export function banner(text: string): string {
+        return `<div>${escapeHtml(text)}</div>`;
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: ts_persist_partial_write
+  meta:
+    language: typescript
+    polarity: bug
+    mechanism: partial_persistence
+    lineage: lin_partial_persist_v1
+    split: holdout
+    trap: persistence
+    defect_class: persistence
+    fingerprint: fp_80802f8b7eea8fdc
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: either both user profile and audit log are persisted, or
+      neither is (atomic multi-step write).
+
+      ```typescript
+      export async function updateProfile(db: Db, userId: string, profile: Profile) {
+        await db.users.update(userId, profile);
+        await db.audit.insert({ userId, action: "profile_update" });
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - db.users.update
+      - db.audit.insert
+      permitted_findings:
+      - atomic
+      - transaction
+      - partial
+      - persist
+      - audit
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: java_jdbc_resource_leak
+  meta:
+    language: java
+    polarity: bug
+    mechanism: resource_missing_cleanup
+    lineage: lin_jdbc_leak_v1
+    split: train
+    trap: resource
+    defect_class: resource_leak
+    fingerprint: fp_148e2362eccab8c7
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+
+      ```java
+      public User findUser(Connection conn, String id) throws SQLException {
+          Statement st = conn.createStatement();
+          ResultSet rs = st.executeQuery("SELECT * FROM users WHERE id = '" + id + "'");
+          if (rs.next()) {
+              return new User(rs.getString("id"), rs.getString("name"));
+          }
+          return null;
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - createStatement
+      - '''" + id + "'''
+      permitted_findings:
+      - sql
+      - injection
+      - close
+      - leak
+      - statement
+      severity_bounds:
+        min: high
+        max: critical
+      security_tenant_control: true
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: java_clean_try_with_resources
+  meta:
+    language: java
+    polarity: clean
+    mechanism: clean_try_with_resources
+    lineage: lin_clean_twr_v1
+    split: dev
+    trap: adversarial_clean
+    defect_class: clean
+    fingerprint: fp_4459d4990d5cebb5
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+
+      ```java
+      public String readAll(Path path) throws IOException {
+          try (BufferedReader br = Files.newBufferedReader(path)) {
+              return br.lines().collect(Collectors.joining("\n"));
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: cs_async_void_fire_forget
+  meta:
+    language: csharp
+    polarity: bug
+    mechanism: async_void_errors
+    lineage: lin_async_void_v1
+    split: train
+    trap: framework_semantic
+    defect_class: error_handling
+    fingerprint: fp_15eb2a56fb65fd5a
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: failures while saving must surface to the caller.
+
+      ```csharp
+      public async void SaveAsync(Order order) {
+          await _db.SaveAsync(order);
+          await _bus.PublishAsync(new OrderSaved(order.Id));
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - async void
+      - SaveAsync
+      permitted_findings:
+      - async void
+      - exception
+      - caller
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: cs_clean_using_dispose
+  meta:
+    language: csharp
+    polarity: clean
+    mechanism: clean_using
+    lineage: lin_clean_using_v1
+    split: holdout
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_a406e7d48bde23d0
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+
+      ```csharp
+      public async Task<string> ReadAllAsync(string path) {
+          using var reader = new StreamReader(path);
+          return await reader.ReadToEndAsync();
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: rs_unwrap_in_lib
+  meta:
+    language: rust
+    polarity: bug
+    mechanism: panic_on_parse
+    lineage: lin_unwrap_v1
+    split: dev
+    trap: framework_semantic
+    defect_class: error_handling
+    fingerprint: fp_294a7294f9343d28
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: library code must return Result errors to callers; it must NOT panic on invalid input.
+      Using unwrap/expect in library parse paths is a defect.
+
+      ```rust
+      pub fn parse_port(s: &str) -> u16 {
+          s.parse::<u16>().unwrap()
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - unwrap
+      permitted_findings:
+      - unwrap
+      - panic
+      - error
+      - Result
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: rs_clean_result_map_err
+  meta:
+    language: rust
+    polarity: clean
+    mechanism: clean_rs_parse_result
+    lineage: lin_clean_rs_parse_v2
+    split: train
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_e9752b8253b98bb4
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: invalid input must return Err, not panic. Returning Result from parse is correct.
+
+      ```rust
+      pub fn parse_u16(s: &str) -> Result<u16, std::num::ParseIntError> {
+          s.parse::<u16>()
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: py_config_env_typo_silent
+  meta:
+    language: python
+    polarity: bug
+    mechanism: config_env_default_silent
+    lineage: lin_config_env_v1
+    split: holdout
+    trap: config_runtime
+    defect_class: config
+    fingerprint: fp_fb5b70179490a89f
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: production must never fall back to the insecure default
+      secret; missing PRODUCTION_SECRET must fail startup.
+
+      ```python
+      import os
+
+      def load_secret() -> str:
+          return os.environ.get("PRODUCTION_SECRET", "changeme")
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - changeme
+      - PRODUCTION_SECRET
+      permitted_findings:
+      - default
+      - secret
+      - changeme
+      - fail
+      severity_bounds:
+        min: high
+        max: critical
+      security_tenant_control: true
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: java_idor_tenant_scope
+  meta:
+    language: java
+    polarity: bug
+    mechanism: multi_tenant_idor
+    lineage: lin_idor_java_v1
+    split: train
+    trap: security
+    defect_class: security
+    fingerprint: fp_3d12e1c7babc29e8
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: an order may only be loaded for the authenticated tenant;
+      cross-tenant access must be denied.
+
+      ```java
+      public final class AuthContext {
+          public final String tenantId;
+          public AuthContext(String tenantId) { this.tenantId = tenantId; }
+      }
+
+      public interface OrderRepo {
+          Order findById(long id);
+          Order findByTenantAndId(String tenantId, long id);
+      }
+
+      public final class OrderService {
+          private final OrderRepo repo;
+          public OrderService(OrderRepo repo) { this.repo = repo; }
+
+          public Order load(AuthContext auth, long orderId) {
+              // tenant is available but not applied
+              return repo.findById(orderId);
+          }
+      }
+
+      public final class OrderController {
+          private final OrderService service;
+          public OrderController(OrderService service) { this.service = service; }
+
+          public Order get(AuthContext auth, long orderId) {
+              return service.load(auth, orderId);
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - findById(orderId)
+      - tenantId
+      permitted_findings:
+      - tenant
+      - idor
+      - auth
+      - scope
+      - cross
+      severity_bounds:
+        min: high
+        max: critical
+      security_tenant_control: true
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: java_clean_tenant_scoped_query
+  meta:
+    language: java
+    polarity: clean
+    mechanism: clean_java_try_resources_v3
+    lineage: lin_clean_java_try_v3
+    split: train
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_d423ebb198218e1e
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: read all lines; try-with-resources closes the reader on every path. Treat this as correct.
+
+      ```java
+      public final class LineReader {
+          public List<String> readLines(Path path) throws IOException {
+              try (BufferedReader br = Files.newBufferedReader(path)) {
+                  return br.lines().toList();
+              }
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: java_migration_drop_then_read
+  meta:
+    language: java
+    polarity: bug
+    mechanism: destructive_schema_migration
+    lineage: lin_migration_drop_v1
+    split: train
+    trap: persistence
+    defect_class: persistence
+    fingerprint: fp_731affa722d2694e
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: application reads must match the live schema after migrations.
+
+      ```java
+      // V3__drop_legacy_email.sql
+      // ALTER TABLE users DROP COLUMN email;
+
+      public final class UserRow {
+          public final long id;
+          public final String email;
+          public UserRow(long id, String email) {
+              this.id = id;
+              this.email = email;
+          }
+      }
+
+      public final class UserMapper {
+          public UserRow map(ResultSet rs) throws SQLException {
+              return new UserRow(rs.getLong("id"), rs.getString("email"));
+          }
+      }
+
+      public final class UserDao {
+          private final UserMapper mapper = new UserMapper();
+          public UserRow find(Connection c, long id) throws SQLException {
+              try (PreparedStatement ps = c.prepareStatement("SELECT id, email FROM users WHERE id = ?")) {
+                  ps.setLong(1, id);
+                  try (ResultSet rs = ps.executeQuery()) {
+                      if (!rs.next()) return null;
+                      return mapper.map(rs);
+                  }
+              }
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - DROP COLUMN email
+      - getString("email")
+      permitted_findings:
+      - schema
+      - migration
+      - email
+      - column
+      severity_bounds:
+        min: medium
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: java_double_checked_locking
+  meta:
+    language: java
+    polarity: bug
+    mechanism: broken_dcl_nonvolatile
+    lineage: lin_dcl_v1
+    split: dev
+    trap: concurrency
+    defect_class: concurrency
+    fingerprint: fp_ef75b61dd2de5420
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: ConfigHolder.getInstance() must publish a fully initialized singleton
+      safely under concurrent callers.
+
+      ```java
+      public final class ConfigHolder {
+          private static ConfigHolder instance;
+          private final Map<String, String> values;
+
+          private ConfigHolder(Map<String, String> values) {
+              this.values = values;
+          }
+
+          public static ConfigHolder getInstance() {
+              if (instance == null) {
+                  synchronized (ConfigHolder.class) {
+                      if (instance == null) {
+                          instance = new ConfigHolder(loadFromDisk());
+                      }
+                  }
+              }
+              return instance;
+          }
+
+          public String get(String key) {
+              return values.get(key);
+          }
+
+          private static Map<String, String> loadFromDisk() {
+              return Map.of("mode", "prod");
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - instance == null
+      - synchronized
+      permitted_findings:
+      - volatile
+      - double
+      - publish
+      - race
+      - singleton
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: java_ssrf_open_connection
+  meta:
+    language: java
+    polarity: bug
+    mechanism: ssrf_user_url
+    lineage: lin_ssrf_java_v1
+    split: holdout
+    trap: security
+    defect_class: security
+    fingerprint: fp_a994efdccd854dbf
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: webhook dispatch may only call allowlisted external HTTPS hosts;
+      user-supplied URLs must not reach link-local or cloud metadata endpoints.
+
+      ```java
+      public final class WebhookDispatcher {
+          public String fetchPreview(String userUrl) throws Exception {
+              if (userUrl == null || !(userUrl.startsWith("http://") || userUrl.startsWith("https://"))) {
+                  throw new IllegalArgumentException("http(s) only");
+              }
+              URL url = new URL(userUrl);
+              HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+              conn.setInstanceFollowRedirects(true);
+              try (InputStream in = conn.getInputStream()) {
+                  return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+              }
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - openConnection
+      - userUrl
+      permitted_findings:
+      - ssrf
+      - metadata
+      - url
+      - allowlist
+      - redirect
+      severity_bounds:
+        min: high
+        max: critical
+      security_tenant_control: true
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: java_jwt_alg_none_accept
+  meta:
+    language: java
+    polarity: bug
+    mechanism: jwt_alg_none
+    lineage: lin_jwt_java_v1
+    split: holdout
+    trap: security
+    defect_class: security
+    fingerprint: fp_a6c4d8f626ab1017
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: JWT verification must reject unsigned tokens and must not trust
+      the header-supplied algorithm without an allowlist.
+
+      ```java
+      public final class JwtVerifier {
+          public Claims verify(String token) {
+              String[] parts = token.split("\\.");
+              JsonObject header = Json.parse(base64Url(parts[0])).asObject();
+              String alg = header.getString("alg", "none");
+              byte[] payload = base64UrlBytes(parts[1]);
+              if ("none".equalsIgnoreCase(alg)) {
+                  return Claims.parse(payload); // accepts unsigned
+              }
+              byte[] sig = base64UrlBytes(parts[2]);
+              if (!Hmac.verify(alg, payload, sig, secretKey())) {
+                  throw new SecurityException("bad sig");
+              }
+              return Claims.parse(payload);
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - none
+      - alg
+      permitted_findings:
+      - jwt
+      - alg
+      - unsigned
+      - none
+      - algorithm
+      severity_bounds:
+        min: high
+        max: critical
+      security_tenant_control: true
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: cs_idor_missing_owner_check
+  meta:
+    language: csharp
+    polarity: bug
+    mechanism: multi_tenant_idor
+    lineage: lin_idor_cs_v1
+    split: dev
+    trap: security
+    defect_class: security
+    fingerprint: fp_adec480e057668c7
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: a document may only be returned to its owning user; other users
+      must receive not-found, not the document.
+
+      ```csharp
+      public sealed class UserContext {
+          public string UserId { get; init; } = "";
+      }
+
+      public interface IDocumentRepo {
+          Document? Get(Guid id);
+          Document? GetForUser(string userId, Guid id);
+      }
+
+      public sealed class DocumentService {
+          private readonly IDocumentRepo _repo;
+          public DocumentService(IDocumentRepo repo) => _repo = repo;
+
+          public Document? Load(UserContext user, Guid id) {
+              return _repo.Get(id); // owner not applied
+          }
+      }
+
+      public sealed class DocumentsController {
+          private readonly DocumentService _svc;
+          public DocumentsController(DocumentService svc) => _svc = svc;
+
+          public IActionResult Get(UserContext user, Guid id) {
+              var doc = _svc.Load(user, id);
+              return doc is null ? NotFound() : Ok(doc);
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - _repo.Get(id)
+      - UserId
+      permitted_findings:
+      - owner
+      - idor
+      - user
+      - tenant
+      - auth
+      severity_bounds:
+        min: high
+        max: critical
+      security_tenant_control: true
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: cs_clean_owner_check
+  meta:
+    language: csharp
+    polarity: clean
+    mechanism: clean_cs_using_stream
+    lineage: lin_clean_cs_stream_v2
+    split: dev
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_94c75c0fa748d3d9
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: read all text; dispose the reader on all paths.
+      This design intentionally uses `using` - correct dispose.
+
+      ```csharp
+      public sealed class FileText {
+          public async Task<string> ReadAllAsync(string path) {
+              using var reader = new StreamReader(path);
+              return await reader.ReadToEndAsync();
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: cs_lock_on_this_public
+  meta:
+    language: csharp
+    polarity: bug
+    mechanism: lock_on_public_this
+    lineage: lin_lock_this_v1
+    split: dev
+    trap: concurrency
+    defect_class: concurrency
+    fingerprint: fp_ff3d2bc09764f838
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: CacheService must not expose a lock object that external code
+      can deadlock against; internal mutual exclusion must use a private gate.
+
+      ```csharp
+      public sealed class CacheService {
+          private readonly Dictionary<string, string> _data = new();
+
+          public string GetOrAdd(string key, Func<string> factory) {
+              lock (this) {
+                  if (_data.TryGetValue(key, out var v)) return v;
+                  v = factory();
+                  _data[key] = v;
+                  return v;
+              }
+          }
+
+          public void Clear() {
+              lock (this) { _data.Clear(); }
+          }
+      }
+
+      // external caller elsewhere:
+      // lock (cacheService) { /* long work */ }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - lock (this)
+      - CacheService
+      permitted_findings:
+      - lock
+      - this
+      - deadlock
+      - public
+      - sync
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: cs_toctou_acl_then_open
+  meta:
+    language: csharp
+    polarity: bug
+    mechanism: toctou_acl_open
+    lineage: lin_toctou_acl_v1
+    split: holdout
+    trap: concurrency
+    defect_class: concurrency
+    fingerprint: fp_708d16fba4593be4
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: file open must only proceed when the caller is authorized for
+      the same path at open time (no TOCTOU between ACL check and open).
+
+      ```csharp
+      public interface IAcl {
+          bool CanRead(User user, string path);
+      }
+
+      public sealed class FileGateway {
+          private readonly IAcl _acl;
+          public FileGateway(IAcl acl) => _acl = acl;
+
+          public byte[] Read(User user, string path) {
+              if (!_acl.CanRead(user, path)) {
+                  throw new UnauthorizedAccessException();
+              }
+              // path may change authorization or symlink between check and open
+              return File.ReadAllBytes(path);
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - CanRead
+      - ReadAllBytes
+      permitted_findings:
+      - toctou
+      - race
+      - acl
+      - symlink
+      - check
+      severity_bounds:
+        min: medium
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: cs_grpc_notfound_to_500
+  meta:
+    language: csharp
+    polarity: bug
+    mechanism: grpc_http_status_map
+    lineage: lin_grpc_status_cs_v1
+    split: holdout
+    trap: cross_module
+    defect_class: contract_drift
+    fingerprint: fp_12e175117789b66d
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: gRPC NotFound must map to HTTP 404 at the gateway; other codes
+      map to 500.
+
+      ```csharp
+      public static class GrpcHttpMapper {
+          public static int ToHttpStatus(StatusCode code, string detail) {
+              if (detail == "notfound") { // wrong signal
+                  return 404;
+              }
+              if (code == StatusCode.NotFound) {
+                  return 500; // inverted
+              }
+              return 500;
+          }
+      }
+
+      public sealed class Gateway {
+          public IActionResult Map(RpcException ex) {
+              var status = GrpcHttpMapper.ToHttpStatus(ex.StatusCode, ex.Status.Detail);
+              return new StatusCodeResult(status);
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - StatusCode.NotFound
+      - return 500
+      permitted_findings:
+      - '404'
+      - NotFound
+      - map
+      - status
+      - '500'
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: rs_sql_format_injection
+  meta:
+    language: rust
+    polarity: bug
+    mechanism: sql_injection_format
+    lineage: lin_rs_sqli_v1
+    split: dev
+    trap: security
+    defect_class: security
+    fingerprint: fp_ede9100ec4275bea
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: SQL must not concatenate or format untrusted user ids into the
+      query string; use bound parameters.
+
+      ```rust
+      pub struct UserRepo;
+
+      impl UserRepo {
+          pub async fn find_by_id(&self, pool: &sqlx::PgPool, user_id: &str) -> Result<User, sqlx::Error> {
+              let q = format!("SELECT * FROM users WHERE id = '{}'", user_id);
+              sqlx::query_as::<_, User>(&q).fetch_one(pool).await
+          }
+
+          pub async fn find_by_email(&self, pool: &sqlx::PgPool, email: &str) -> Result<User, sqlx::Error> {
+              sqlx::query_as::<_, User>("SELECT * FROM users WHERE email = $1")
+                  .bind(email)
+                  .fetch_one(pool)
+                  .await
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - format!
+      - user_id
+      permitted_findings:
+      - sql
+      - injection
+      - format
+      - parameter
+      severity_bounds:
+        min: high
+        max: critical
+      security_tenant_control: true
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: rs_mutex_held_across_await
+  meta:
+    language: rust
+    polarity: bug
+    mechanism: mutex_across_await
+    lineage: lin_mutex_await_v1
+    split: holdout
+    trap: concurrency
+    defect_class: concurrency
+    fingerprint: fp_67ef9a21e269553e
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: do not hold a std::sync::Mutex across .await points (may block
+      the runtime / deadlock).
+
+      ```rust
+      pub struct State {
+          pub cache: Mutex<HashMap<String, String>>,
+          pub client: HttpClient,
+      }
+
+      impl State {
+          pub async fn refresh(&self, key: &str) -> Result<String, Error> {
+              let mut guard = self.cache.lock().unwrap();
+              if let Some(v) = guard.get(key) {
+                  return Ok(v.clone());
+              }
+              let body = self.client.fetch(key).await?; // await while holding MutexGuard
+              guard.insert(key.to_string(), body.clone());
+              Ok(body)
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - cache.lock()
+      - .await
+      permitted_findings:
+      - mutex
+      - await
+      - hold
+      - deadlock
+      - guard
+      severity_bounds:
+        min: high
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: rs_clean_drop_guard_before_await
+  meta:
+    language: rust
+    polarity: clean
+    mechanism: clean_rs_parse_ports
+    lineage: lin_clean_rs_parse_ports_v1
+    split: holdout
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_540b4a8c4073e940
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: invalid input must return Err, not panic. This design
+      intentionally returns Result from parse.
+
+      ```rust
+      pub fn parse_port(s: &str) -> Result<u16, std::num::ParseIntError> {
+          s.parse::<u16>()
+      }
+
+      pub fn parse_ports(vals: &[&str]) -> Result<Vec<u16>, std::num::ParseIntError> {
+          let mut out = Vec::with_capacity(vals.len());
+          for v in vals {
+              out.push(parse_port(v)?);
+          }
+          Ok(out)
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: ts_proto_pollution_merge
+  meta:
+    language: typescript
+    polarity: bug
+    mechanism: prototype_pollution_merge
+    lineage: lin_proto_poll_v1
+    split: train
+    trap: security
+    defect_class: security
+    fingerprint: fp_a1e118ae0d8a9d02
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: merging user JSON into prefs must not allow prototype pollution
+      (__proto__ / constructor / prototype keys).
+
+      ```typescript
+      export type Prefs = Record<string, unknown>;
+
+      export function deepMerge(target: Prefs, source: Prefs): Prefs {
+        for (const key of Object.keys(source)) {
+          const val = source[key];
+          if (val && typeof val === "object" && !Array.isArray(val)) {
+            const base = (target[key] as Prefs) ?? {};
+            target[key] = deepMerge(base, val as Prefs);
+          } else {
+            target[key] = val;
+          }
+        }
+        return target;
+      }
+
+      export function applyUserPrefs(current: Prefs, body: Prefs): Prefs {
+        return deepMerge({ ...current }, body);
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - Object.keys(source)
+      - target[key] = val
+      permitted_findings:
+      - proto
+      - pollution
+      - __proto__
+      - prototype
+      - merge
+      severity_bounds:
+        min: high
+        max: critical
+      security_tenant_control: true
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: ts_jwt_alg_none
+  meta:
+    language: typescript
+    polarity: bug
+    mechanism: jwt_alg_none
+    lineage: lin_jwt_ts_v1
+    split: holdout
+    trap: security
+    defect_class: security
+    fingerprint: fp_0277e844a8fb1bf8
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: JWT verification must pin allowed algorithms and reject alg=none.
+
+      ```typescript
+      export function verifyToken(token: string, secret: string): Claims {
+        const [h, p, s] = token.split(".");
+        const header = JSON.parse(Buffer.from(h, "base64url").toString("utf8")) as { alg?: string };
+        const alg = header.alg ?? "none";
+        if (alg === "none") {
+          return JSON.parse(Buffer.from(p, "base64url").toString("utf8")) as Claims;
+        }
+        const ok = hmacVerify(alg, p, s, secret);
+        if (!ok) throw new Error("bad signature");
+        return JSON.parse(Buffer.from(p, "base64url").toString("utf8")) as Claims;
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - alg === "none"
+      - header.alg
+      permitted_findings:
+      - jwt
+      - none
+      - alg
+      - unsigned
+      - algorithm
+      severity_bounds:
+        min: critical
+        max: critical
+      security_tenant_control: true
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: ts_clean_parameterized_sql
+  meta:
+    language: typescript
+    polarity: clean
+    mechanism: clean_ts_param_sql
+    lineage: lin_clean_ts_sql_v2
+    split: train
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_d6be76f6952a3d5b
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: SQL must use bound parameters. This design intentionally uses $1 placeholders.
+
+      ```typescript
+      import type { Pool } from "pg";
+
+      export async function findById(pool: Pool, id: string) {
+        return pool.query("SELECT id, name FROM users WHERE id = $1", [id]);
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: py_ssrf_requests_no_allowlist
+  meta:
+    language: python
+    polarity: bug
+    mechanism: ssrf_user_url
+    lineage: lin_ssrf_py_v1
+    split: holdout
+    trap: security
+    defect_class: security
+    fingerprint: fp_1d93cd2643e9da9f
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: preview fetch may only call allowlisted external hosts; user URLs
+      must not reach link-local or cloud metadata endpoints.
+
+      ```python
+      import requests
+
+      def is_http(url: str) -> bool:
+          return url.startswith("http://") or url.startswith("https://")
+
+      def fetch_preview(url: str) -> str:
+          if not is_http(url):
+              raise ValueError("http(s) only")
+          # no host allowlist; redirects enabled
+          r = requests.get(url, timeout=5, allow_redirects=True)
+          r.raise_for_status()
+          return r.text
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - requests.get
+      - url
+      permitted_findings:
+      - ssrf
+      - metadata
+      - allowlist
+      - redirect
+      severity_bounds:
+        min: high
+        max: critical
+      security_tenant_control: true
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: py_toctou_exists_then_open
+  meta:
+    language: python
+    polarity: bug
+    mechanism: toctou_path_open
+    lineage: lin_toctou_path_v1
+    split: dev
+    trap: security
+    defect_class: security
+    fingerprint: fp_bcefd794c9243237
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: reads under BASE must remain safe against TOCTOU / symlink races;
+      existence checks before open are not sufficient authorization.
+
+      ```python
+      from pathlib import Path
+      import os
+
+      BASE = Path("/var/data/uploads")
+
+      def safe_read(name: str) -> bytes:
+          path = BASE / name
+          if not path.exists() or not path.is_file():
+              raise FileNotFoundError(name)
+          # path target may change between exists and open
+          with open(path, "rb") as f:
+              return f.read()
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - path.exists()
+      - open(path
+      permitted_findings:
+      - toctou
+      - symlink
+      - race
+      - exists
+      - open
+      severity_bounds:
+        min: high
+        max: critical
+      security_tenant_control: true
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: go_context_withcancel_leak
+  meta:
+    language: go
+    polarity: bug
+    mechanism: context_cancel_leak
+    lineage: lin_ctx_cancel_leak_v1
+    split: train
+    trap: resource
+    defect_class: resource_leak
+    fingerprint: fp_3e7ffa9356f24613
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: every context.WithCancel must have cancel called on all paths
+      (or ownership documented and always invoked by the owner).
+
+      ```go
+      type Worker struct {
+          client HTTPClient
+      }
+
+      func (w *Worker) Start(parent context.Context, jobs <-chan Job) {
+          ctx, cancel := context.WithCancel(parent)
+          go w.loop(ctx, jobs)
+          // returns without calling cancel and without returning cancel to caller
+      }
+
+      func (w *Worker) loop(ctx context.Context, jobs <-chan Job) {
+          for {
+              select {
+              case <-ctx.Done():
+                  return
+              case j := <-jobs:
+                  _ = w.client.Do(ctx, j)
+              }
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - WithCancel
+      - cancel
+      permitted_findings:
+      - cancel
+      - context
+      - leak
+      - WithCancel
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: go_mutex_value_receiver
+  meta:
+    language: go
+    polarity: bug
+    mechanism: mutex_copied_by_value
+    lineage: lin_mutex_copy_go_v1
+    split: dev
+    trap: concurrency
+    defect_class: concurrency
+    fingerprint: fp_6c3ca7a9e7ed5f0f
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: Counter must be safe for concurrent Inc from multiple goroutines
+      sharing one Counter value.
+
+      ```go
+      type Counter struct {
+          mu sync.Mutex
+          n  int
+      }
+
+      func (c Counter) Inc() { // value receiver copies mutex
+          c.mu.Lock()
+          c.n++
+          c.mu.Unlock()
+      }
+
+      func (c Counter) Value() int {
+          c.mu.Lock()
+          defer c.mu.Unlock()
+          return c.n
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - func (c Counter) Inc()
+      - c.mu.Lock()
+      permitted_findings:
+      - value receiver
+      - copy
+      - mutex
+      - pointer
+      - race
+      severity_bounds:
+        min: high
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: go_clean_errgroup_propagate
+  meta:
+    language: go
+    polarity: clean
+    mechanism: clean_go_open_defer_v3
+    lineage: lin_clean_go_open_v3
+    split: dev
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_d63ab2edc778f283
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\nRequirement: read file bytes; defer Close\
+      \ runs on every return after Open succeeds. This is correct Go.\n\n```go\nfunc ReadFile(path string)\
+      \ ([]byte, error) {\n\tf, err := os.Open(path)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\t\
+      defer f.Close()\n\treturn io.ReadAll(f)\n}\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: go_cancel_mid_tx_commit
+  meta:
+    language: go
+    polarity: bug
+    mechanism: cancel_mid_persist
+    lineage: lin_cancel_mid_tx_v1
+    split: holdout
+    trap: cancellation
+    defect_class: cancellation
+    fingerprint: fp_ca6afdf7e70eb63b
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: if the request context is canceled before commit, the transaction
+      must not commit partial inserts.
+
+      ```go
+      func SaveOrder(ctx context.Context, db *sql.DB, o Order) error {
+          tx, err := db.BeginTx(ctx, nil)
+          if err != nil {
+              return err
+          }
+          defer tx.Rollback()
+          if _, err := tx.ExecContext(ctx, "INSERT INTO orders(id) VALUES($1)", o.ID); err != nil {
+              return err
+          }
+          // ignore cancellation between statements
+          if _, err := tx.Exec("INSERT INTO order_items(order_id, sku) VALUES($1,$2)", o.ID, o.SKU); err != nil {
+              return err
+          }
+          return tx.Commit()
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - tx.Commit()
+      - Exec(
+      permitted_findings:
+      - cancel
+      - context
+      - commit
+      - partial
+      - tx
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: py_asyncio_cancel_partial_commit
+  meta:
+    language: python
+    polarity: bug
+    mechanism: asyncio_cancel_unshielded
+    lineage: lin_asyncio_cancel_v1
+    split: train
+    trap: cancellation
+    defect_class: cancellation
+    fingerprint: fp_09165bae7f908d6e
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: if the task is canceled before commit finishes, no partial order
+      may remain committed; commit must be shielded or rolled back on cancel.
+
+      ```python
+      import asyncio
+
+      class OrderRepo:
+          async def insert_items(self, order_id: str, items: list[str]) -> None: ...
+          async def commit(self) -> None: ...
+          async def rollback(self) -> None: ...
+
+      async def save_order(repo: OrderRepo, order_id: str, items: list[str]) -> None:
+          await repo.insert_items(order_id, items)
+          await repo.commit()  # cancel here leaves items inserted without clear policy
+
+      async def handle(repo: OrderRepo, order_id: str, items: list[str]) -> None:
+          await asyncio.wait_for(save_order(repo, order_id, items), timeout=0.05)
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - repo.commit()
+      permitted_findings:
+      - cancel
+      - asyncio
+      - shield
+      - partial
+      - commit
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: py_clean_asyncio_shielded_commit
+  meta:
+    language: python
+    polarity: clean
+    mechanism: clean_py_path_read
+    lineage: lin_clean_py_path_v2
+    split: train
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_9b6d10720f270c17
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: read UTF-8 text from a local path using a context manager.
+      This design intentionally uses Path.open as a context manager - correct cleanup.
+
+      ```python
+      from pathlib import Path
+
+      def read_text(path: str) -> str:
+          with Path(path).open(encoding="utf-8") as f:
+              return f.read()
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: ts_react_stale_closure_token
+  meta:
+    language: typescript
+    polarity: bug
+    mechanism: react_stale_closure
+    lineage: lin_stale_closure_v1
+    split: dev
+    trap: framework_semantic
+    defect_class: framework_semantic
+    fingerprint: fp_23000f8fa5315af0
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: polling must always use the latest auth token after login refresh.
+
+      ```typescript
+      export function useAuthPoll(token: string, poll: (t: string) => void) {
+        useEffect(() => {
+          const id = setInterval(() => {
+            poll(token);
+          }, 5000);
+          return () => clearInterval(id);
+        }, []); // token intentionally omitted from deps in this buggy version
+      }
+
+      export function AuthBanner({ token }: { token: string }) {
+        useAuthPoll(token, (t) => fetch("/api/me", { headers: { Authorization: t } }));
+        return null;
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - useEffect
+      - '[]'
+      permitted_findings:
+      - stale
+      - closure
+      - token
+      - deps
+      - effect
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: rs_clock_unit_mismatch_exp
+  meta:
+    language: rust
+    polarity: bug
+    mechanism: clock_unit_mismatch
+    lineage: lin_clock_unit_v1
+    split: dev
+    trap: logic
+    defect_class: logic
+    fingerprint: fp_22a8caa591b3acf0
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: token exp is Unix time in seconds; validator must use the same unit.
+
+      ```rust
+      pub fn mint(now_secs: u64, ttl_secs: u64) -> Token {
+          Token { exp: now_secs + ttl_secs }
+      }
+
+      pub fn valid(token: &Token) -> bool {
+          let now_ms = SystemTime::now()
+              .duration_since(UNIX_EPOCH)
+              .unwrap()
+              .as_millis() as u64;
+          token.exp > now_ms // compares seconds to milliseconds
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - as_millis
+      - token.exp
+      permitted_findings:
+      - millis
+      - seconds
+      - exp
+      - unit
+      - clock
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: rs_cancel_select_partial_write
+  meta:
+    language: rust
+    polarity: bug
+    mechanism: cancel_partial_write
+    lineage: lin_rs_cancel_write_v1
+    split: holdout
+    trap: cancellation
+    defect_class: cancellation
+    fingerprint: fp_c0fdd141a5ec69e4
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: if canceled mid-write, partial file contents must not be treated
+      as success; truncate or delete on cancel.
+
+      ```rust
+      pub async fn write_all_cancellable(path: &Path, data: &[u8], mut cancel: Receiver<()>) -> io::Result<()> {
+          let mut f = File::create(path).await?;
+          let mut offset = 0;
+          while offset < data.len() {
+              tokio::select! {
+                  _ = cancel.recv() => {
+                      return Ok(()); // partial file remains, success reported
+                  }
+                  n = f.write(&data[offset..]) => {
+                      offset += n?;
+                  }
+              }
+          }
+          Ok(())
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - cancel.recv()
+      - return Ok(())
+      permitted_findings:
+      - cancel
+      - partial
+      - truncate
+      - success
+      - write
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: go_time_after_leak_select
+  meta:
+    language: go
+    polarity: bug
+    mechanism: time_after_timer_leak
+    lineage: lin_time_after_v1
+    split: train
+    trap: resource
+    defect_class: resource_leak
+    fingerprint: fp_e9bb0da324ded740
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\nRequirement: WaitOrTimeout must not leak\
+      \ timers when the result channel wins before timeout.\n\n```go\nfunc WaitOrTimeout(ctx context.Context,\
+      \ ch <-chan Result, d time.Duration) (Result, error) {\n\tselect {\n\tcase <-ctx.Done():\n\t\treturn\
+      \ Result{}, ctx.Err()\n\tcase r := <-ch:\n\t\treturn r, nil\n\tcase <-time.After(d):\n\t\treturn\
+      \ Result{}, errTimeout\n\t}\n}\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - time.After(d)
+      - select
+      permitted_findings:
+      - timer
+      - leak
+      - After
+      - timeout
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: go_nil_map_assign_race_init
+  meta:
+    language: go
+    polarity: bug
+    mechanism: nil_map_write_init_race
+    lineage: lin_nil_map_init_v1
+    split: dev
+    trap: concurrency
+    defect_class: concurrency
+    fingerprint: fp_f1caaa4acd5a94e2
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\nRequirement: Registry must be safe for concurrent\
+      \ Register without panics.\n\n```go\ntype Registry struct {\n\tmu   sync.Mutex\n\tbyID map[string]Handler\n\
+      }\n\nfunc (r *Registry) Register(id string, h Handler) {\n\tr.mu.Lock()\n\tdefer r.mu.Unlock()\n\
+      \tr.byID[id] = h\n}\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - r.byID[id]
+      permitted_findings:
+      - nil
+      - map
+      - panic
+      - make
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: go_http_body_not_closed_retry
+  meta:
+    language: go
+    polarity: bug
+    mechanism: http_body_close_retry
+    lineage: lin_http_body_retry_v1
+    split: holdout
+    trap: resource
+    defect_class: resource_leak
+    fingerprint: fp_4710c60b0857eb6a
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\nRequirement: every http.Response Body must\
+      \ be closed, including failed retry attempts.\n\n```go\nfunc FetchJSON(client *http.Client, url\
+      \ string) ([]byte, error) {\n\tvar last error\n\tfor attempt := 0; attempt < 3; attempt++ {\n\t\t\
+      resp, err := client.Get(url)\n\t\tif err != nil {\n\t\t\tlast = err\n\t\t\tcontinue\n\t\t}\n\t\t\
+      if resp.StatusCode >= 500 {\n\t\t\tlast = fmt.Errorf(\"status %d\", resp.StatusCode)\n\t\t\tcontinue\n\
+      \t\t}\n\t\tdefer resp.Body.Close()\n\t\treturn io.ReadAll(resp.Body)\n\t}\n\treturn nil, last\n\
+      }\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - StatusCode >= 500
+      - continue
+      permitted_findings:
+      - Body
+      - close
+      - leak
+      - retry
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: go_clean_http_body_closed
+  meta:
+    language: go
+    polarity: clean
+    mechanism: clean_go_open_defer_v4
+    lineage: lin_clean_go_open_v4
+    split: train
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_1e5c2b56067e6742
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\nRequirement: open and read a config file.\
+      \ defer f.Close() after a successful Open is correct and not a leak.\n\n```go\nfunc ReadConfig(path\
+      \ string) ([]byte, error) {\n\tf, err := os.Open(path)\n\tif err != nil {\n\t\treturn nil, err\n\
+      \t}\n\tdefer f.Close()\n\tdata, err := io.ReadAll(f)\n\tif err != nil {\n\t\treturn nil, err\n\t\
+      }\n\treturn data, nil\n}\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: go_slice_alias_mutate_return
+  meta:
+    language: go
+    polarity: bug
+    mechanism: slice_alias_escape
+    lineage: lin_slice_alias_v1
+    split: dev
+    trap: logic
+    defect_class: logic
+    fingerprint: fp_4cc8409abb3d32ba
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\nRequirement: Normalize must return a defensive\
+      \ copy so callers cannot mutate internal storage.\n\n```go\ntype Buffer struct{ buf []byte }\n\n\
+      func (b *Buffer) Normalize() []byte {\n\tb.buf = bytes.TrimSpace(b.buf)\n\treturn b.buf\n}\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - return b.buf
+      - TrimSpace
+      permitted_findings:
+      - alias
+      - copy
+      - escape
+      - slice
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: go_sql_in_clause_format
+  meta:
+    language: go
+    polarity: bug
+    mechanism: sql_in_clause_concat
+    lineage: lin_go_sql_in_v1
+    split: holdout
+    trap: security
+    defect_class: security
+    fingerprint: fp_8619249126d00624
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\nRequirement: user-supplied IDs must not\
+      \ be concatenated into SQL.\n\n```go\nfunc LoadUsers(ctx context.Context, db *sql.DB, ids []string)\
+      \ ([]User, error) {\n\tq := \"SELECT id, name FROM users WHERE id IN ('\" + strings.Join(ids, \"\
+      ','\") + \"')\"\n\trows, err := db.QueryContext(ctx, q)\n\tif err != nil { return nil, err }\n\t\
+      defer rows.Close()\n\treturn scanUsers(rows)\n}\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - strings.Join(ids
+      - SELECT id, name
+      permitted_findings:
+      - sql
+      - injection
+      - join
+      - IN
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: go_session_cookie_not_secure
+  meta:
+    language: go
+    polarity: bug
+    mechanism: cookie_flags_missing
+    lineage: lin_cookie_flags_v1
+    split: dev
+    trap: security
+    defect_class: security
+    fingerprint: fp_6b129b20ca175575
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\nRequirement: session cookies must set Secure\
+      \ and HttpOnly.\n\n```go\nfunc SetSession(w http.ResponseWriter, sessionID string) {\n\thttp.SetCookie(w,\
+      \ &http.Cookie{Name: \"session\", Value: sessionID, Path: \"/\"})\n}\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - SetCookie
+      - session
+      permitted_findings:
+      - Secure
+      - HttpOnly
+      - cookie
+      - session
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: go_clean_errgroup_limits
+  meta:
+    language: go
+    polarity: clean
+    mechanism: clean_go_open_defer_v6
+    lineage: lin_clean_go_open_v6
+    split: holdout
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_a7354680f56e8975
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: "Audit the following code for bugs (snippet mode).\nRequirement: read entire file. defer Close\
+      \ after successful Open is correct Go - not a leak.\n\n```go\nfunc Slurp(path string) ([]byte, error)\
+      \ {\n\tf, err := os.Open(path)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tdefer f.Close()\n\
+      \treturn io.ReadAll(f)\n}\n```\n"
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: py_pickle_loads_untrusted
+  meta:
+    language: python
+    polarity: bug
+    mechanism: insecure_deser_pickle
+    lineage: lin_pickle_v1
+    split: train
+    trap: security
+    defect_class: security
+    fingerprint: fp_a9be3ce2bddc9f2d
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: cache values from the network must not execute code during deserialization.
+
+      ```python
+      import pickle
+
+      class JobCache:
+          def __init__(self, client):
+              self.client = client
+
+          def get(self, key: str):
+              raw = self.client.get(key)
+              if raw is None:
+                  return None
+              return pickle.loads(raw)
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - pickle.loads
+      - raw
+      permitted_findings:
+      - pickle
+      - deser
+      - rce
+      - loads
+      severity_bounds:
+        min: critical
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: py_yaml_load_unsafe
+  meta:
+    language: python
+    polarity: bug
+    mechanism: yaml_unsafe_load
+    lineage: lin_yaml_load_v1
+    split: dev
+    trap: security
+    defect_class: security
+    fingerprint: fp_8f4be5c2d4246bd1
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: user-uploaded YAML must not instantiate arbitrary Python objects.
+
+      ```python
+      import yaml
+
+      def load_pipeline_config(text: str) -> dict:
+          # text comes from an untrusted upload
+          return yaml.load(text)
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - yaml.load(text)
+      permitted_findings:
+      - yaml
+      - load
+      - unsafe
+      - rce
+      severity_bounds:
+        min: critical
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: py_django_raw_sql_percent
+  meta:
+    language: python
+    polarity: bug
+    mechanism: django_raw_sql_format
+    lineage: lin_django_raw_v1
+    split: holdout
+    trap: security
+    defect_class: security
+    fingerprint: fp_f350ded82518c29f
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: SQL must use bound parameters.
+
+      ```python
+      def search_users(conn, q: str):
+          sql = "SELECT id, email FROM users WHERE email LIKE '%%' || '%s' || '%%'" % q
+          with conn.cursor() as cur:
+              cur.execute(sql)
+              return cur.fetchall()
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - '% q'
+      - execute(sql)
+      permitted_findings:
+      - sql
+      - injection
+      - format
+      - parameter
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: py_tempfile_mktemp_race
+  meta:
+    language: python
+    polarity: bug
+    mechanism: mktemp_toctou
+    lineage: lin_mktemp_v1
+    split: train
+    trap: security
+    defect_class: security
+    fingerprint: fp_22ebad72fc5510ab
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: temp files must be created atomically without TOCTOU.
+
+      ```python
+      import tempfile
+
+      def write_secret(data: bytes) -> str:
+          path = tempfile.mktemp(prefix="secret-")
+          with open(path, "wb") as f:
+              f.write(data)
+          return path
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - mktemp
+      - open(path
+      permitted_findings:
+      - toctou
+      - mktemp
+      - race
+      - temp
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: py_logging_exception_secret
+  meta:
+    language: python
+    polarity: bug
+    mechanism: log_secret_exception
+    lineage: lin_log_secret_v1
+    split: dev
+    trap: security
+    defect_class: security
+    fingerprint: fp_6892bfbb3b2d0f63
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: logs must not include raw Authorization headers or API tokens.
+
+      ```python
+      import logging
+      log = logging.getLogger("api")
+
+      def call_upstream(session, url: str, token: str) -> bytes:
+          headers = {"Authorization": f"Bearer {token}"}
+          try:
+              r = session.get(url, headers=headers, timeout=10)
+              r.raise_for_status()
+              return r.content
+          except Exception:
+              log.exception("upstream failed headers=%s", headers)
+              raise
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - Authorization
+      - log.exception
+      permitted_findings:
+      - log
+      - secret
+      - token
+      - Bearer
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: py_clean_json_loads
+  meta:
+    language: python
+    polarity: clean
+    mechanism: clean_py_with_open_v3
+    lineage: lin_clean_py_open_v3
+    split: holdout
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_75b2cad90b2b22de
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: read binary contents with a context manager. `with open` closes on all exits - correct.
+
+      ```python
+      def read_bytes(path: str) -> bytes:
+          with open(path, "rb") as f:
+              return f.read()
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: py_subprocess_shell_true
+  meta:
+    language: python
+    polarity: bug
+    mechanism: subprocess_shell_injection
+    lineage: lin_subproc_shell_v1
+    split: holdout
+    trap: security
+    defect_class: security
+    fingerprint: fp_d81600255ede81f7
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: user-provided filenames must not be passed to a shell.
+
+      ```python
+      import subprocess
+
+      def convert_report(user_filename: str) -> str:
+          cmd = f"pandoc {user_filename} -o /tmp/out.pdf"
+          subprocess.check_call(cmd, shell=True)
+          return "/tmp/out.pdf"
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - shell=True
+      - user_filename
+      permitted_findings:
+      - shell
+      - injection
+      - subprocess
+      severity_bounds:
+        min: critical
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: py_cache_stampede_no_singleflight
+  meta:
+    language: python
+    polarity: bug
+    mechanism: cache_stampede
+    lineage: lin_cache_stampede_v1
+    split: train
+    trap: concurrency
+    defect_class: concurrency
+    fingerprint: fp_d0b69bc048e7e150
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: under concurrent misses for the same key, at most one backend fetch should run.
+
+      ```python
+      import threading
+
+      class Cache:
+          def __init__(self, backend):
+              self.backend = backend
+              self.store = {}
+              self.lock = threading.Lock()
+
+          def get(self, key: str):
+              with self.lock:
+                  if key in self.store:
+                      return self.store[key]
+              value = self.backend.fetch(key)
+              with self.lock:
+                  self.store[key] = value
+              return value
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - backend.fetch
+      - if key in self.store
+      permitted_findings:
+      - stampede
+      - single
+      - flight
+      - concurrent
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: ts_mass_assignment_role
+  meta:
+    language: typescript
+    polarity: bug
+    mechanism: mass_assignment_role
+    lineage: lin_mass_assign_v1
+    split: train
+    trap: security
+    defect_class: security
+    fingerprint: fp_daede52661d0c5b2
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: users must not set their own role via profile update.
+
+      ```typescript
+      type User = { id: string; role: "user" | "admin"; displayName: string };
+
+      export function updateProfile(user: User, body: Record<string, unknown>): User {
+        return { ...user, ...body } as User;
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - '...body'
+      - role
+      permitted_findings:
+      - mass
+      - assignment
+      - role
+      - admin
+      severity_bounds:
+        min: critical
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: ts_open_redirect
+  meta:
+    language: typescript
+    polarity: bug
+    mechanism: open_redirect
+    lineage: lin_open_redirect_v1
+    split: dev
+    trap: security
+    defect_class: security
+    fingerprint: fp_9cfb5be105d806cf
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: post-login redirect may only target same-origin relative paths.
+
+      ```typescript
+      export function safeRedirect(res: Response, next: string | undefined) {
+        const target = next || "/home";
+        res.redirect(302, target);
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - res.redirect
+      - next
+      permitted_findings:
+      - redirect
+      - open
+      - phishing
+      - origin
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: ts_timing_string_compare_token
+  meta:
+    language: typescript
+    polarity: bug
+    mechanism: timing_unsafe_compare
+    lineage: lin_timing_cmp_v1
+    split: holdout
+    trap: security
+    defect_class: security
+    fingerprint: fp_1f1714e63529d54d
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: API token comparison must be constant-time.
+
+      ```typescript
+      export function authorize(header: string | undefined, expected: string): boolean {
+        if (!header?.startsWith("Bearer ")) return false;
+        const token = header.slice("Bearer ".length);
+        return token === expected;
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - token === expected
+      - Bearer
+      permitted_findings:
+      - timing
+      - constant
+      - compare
+      - token
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: ts_zod_partial_then_cast
+  meta:
+    language: typescript
+    polarity: bug
+    mechanism: schema_bypass_cast
+    lineage: lin_zod_cast_v1
+    split: train
+    trap: framework_semantic
+    defect_class: framework_semantic
+    fingerprint: fp_352d4f3b82d4e27d
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: only fully validated payloads may reach createOrder.
+
+      ```typescript
+      const OrderSchema = z.object({ sku: z.string().min(1), qty: z.number().int().positive() });
+
+      export function parseBody(raw: unknown) {
+        const partial = OrderSchema.partial().safeParse(raw);
+        if (!partial.success) throw new Error("invalid");
+        return partial.data as z.infer<typeof OrderSchema>;
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - partial()
+      - as z.infer
+      permitted_findings:
+      - partial
+      - cast
+      - required
+      - validation
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: ts_promise_unhandled_fire_forget
+  meta:
+    language: typescript
+    polarity: bug
+    mechanism: unhandled_promise_fire_forget
+    lineage: lin_ts_fire_forget_v1
+    split: dev
+    trap: framework_semantic
+    defect_class: error_handling
+    fingerprint: fp_60ec54a603ed8446
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: audit log write failures must surface to the caller.
+
+      ```typescript
+      export async function updateUser(db: Db, id: string, patch: Patch) {
+        await db.users.update(id, patch);
+        void db.audit.insert({ id, patch });
+        return { ok: true as const };
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - void db.audit.insert
+      - update
+      permitted_findings:
+      - await
+      - unhandled
+      - promise
+      - audit
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: ts_clean_crypto_timing_safe
+  meta:
+    language: typescript
+    polarity: clean
+    mechanism: clean_ts_escape_attr
+    lineage: lin_clean_ts_escape_attr_v1
+    split: holdout
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_8603f803d47a5968
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: render an attribute value using escapeHtml. Treat the helper as correct.
+
+      ```typescript
+      import { escapeHtml } from "./escape";
+
+      export function attrTitle(value: string): string {
+        return `title="${escapeHtml(value)}"`;
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: ts_cors_reflect_origin
+  meta:
+    language: typescript
+    polarity: bug
+    mechanism: cors_reflect_origin
+    lineage: lin_cors_reflect_v1
+    split: holdout
+    trap: security
+    defect_class: security
+    fingerprint: fp_2fadee849d06e957
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: CORS must not reflect arbitrary Origin with credentials.
+
+      ```typescript
+      export function cors(req: Request, res: Response, next: Next) {
+        const origin = req.headers.origin || "*";
+        res.setHeader("Access-Control-Allow-Origin", origin);
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+        next();
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - Allow-Origin
+      - origin
+      permitted_findings:
+      - cors
+      - origin
+      - reflect
+      - credentials
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: ts_clean_path_join_resolve
+  meta:
+    language: typescript
+    polarity: clean
+    mechanism: clean_ts_param_insert
+    lineage: lin_clean_ts_insert_v1
+    split: train
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_5a4fcb10a781def7
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: insert must use bound parameters, not string concat.
+
+      ```typescript
+      import type { Pool } from "pg";
+
+      export async function insertName(pool: Pool, name: string) {
+        return pool.query("INSERT INTO users(name) VALUES ($1)", [name]);
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: java_xxe_document_builder
+  meta:
+    language: java
+    polarity: bug
+    mechanism: xxe_enabled_parser
+    lineage: lin_xxe_java_v1
+    split: train
+    trap: security
+    defect_class: security
+    fingerprint: fp_2f8a4f68dddd302d
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: XML from untrusted clients must not resolve external entities (XXE).
+
+      ```java
+      public final class XmlImport {
+          public Document parse(InputStream in) throws Exception {
+              DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
+              DocumentBuilder b = f.newDocumentBuilder();
+              return b.parse(in);
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - DocumentBuilderFactory
+      - parse(in)
+      permitted_findings:
+      - xxe
+      - entity
+      - external
+      - xml
+      severity_bounds:
+        min: critical
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: java_random_token_weak
+  meta:
+    language: java
+    polarity: bug
+    mechanism: weak_prng_token
+    lineage: lin_weak_prng_v1
+    split: dev
+    trap: security
+    defect_class: security
+    fingerprint: fp_0b2bd78e5dfb88c7
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: password-reset tokens must be cryptographically unpredictable.
+
+      ```java
+      public final class ResetTokens {
+          private final Random random = new Random();
+          public String issue(String userId) {
+              return userId + ":" + Long.toHexString(random.nextLong());
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - new Random()
+      - nextLong
+      permitted_findings:
+      - random
+      - predict
+      - SecureRandom
+      - token
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: java_equals_no_hashcode
+  meta:
+    language: java
+    polarity: bug
+    mechanism: equals_hashcode_contract
+    lineage: lin_eq_hash_v1
+    split: holdout
+    trap: logic
+    defect_class: logic
+    fingerprint: fp_45912f8d1a7e3411
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: UserKey must work as a HashMap key (equals/hashCode contract).
+
+      ```java
+      public final class UserKey {
+          private final String tenantId;
+          private final String userId;
+          public UserKey(String tenantId, String userId) {
+              this.tenantId = tenantId; this.userId = userId;
+          }
+          @Override public boolean equals(Object o) {
+              if (!(o instanceof UserKey)) return false;
+              UserKey k = (UserKey) o;
+              return Objects.equals(tenantId, k.tenantId) && Objects.equals(userId, k.userId);
+          }
+      }
+      public final class SessionIndex {
+          private final Map<UserKey, Session> sessions = new HashMap<>();
+          public void put(UserKey k, Session s) { sessions.put(k, s); }
+          public Session get(UserKey k) { return sessions.get(k); }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - equals
+      - HashMap
+      permitted_findings:
+      - hashCode
+      - equals
+      - contract
+      - map
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: java_trust_all_certs
+  meta:
+    language: java
+    polarity: bug
+    mechanism: tls_trust_all
+    lineage: lin_trust_all_v1
+    split: holdout
+    trap: security
+    defect_class: security
+    fingerprint: fp_650ec4bc9db659de
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: outbound HTTPS must validate server certificates.
+
+      ```java
+      public final class InsecureHttp {
+          public static HttpClient trustAllClient() throws Exception {
+              TrustManager[] trustAll = new TrustManager[] {
+                  new X509TrustManager() {
+                      public void checkClientTrusted(X509Certificate[] c, String a) {}
+                      public void checkServerTrusted(X509Certificate[] c, String a) {}
+                      public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+                  }
+              };
+              SSLContext sc = SSLContext.getInstance("TLS");
+              sc.init(null, trustAll, new SecureRandom());
+              return HttpClient.newBuilder().sslContext(sc).build();
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - checkServerTrusted
+      - trustAll
+      permitted_findings:
+      - tls
+      - certificate
+      - trust
+      - mitm
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: java_clean_prepared_statement
+  meta:
+    language: java
+    polarity: clean
+    mechanism: clean_java_try_resources_v4
+    lineage: lin_clean_java_try_v4
+    split: train
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_13119a4f507b987e
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: copy a file with try-with-resources. Resources are closed correctly.
+
+      ```java
+      public final class FileCopy {
+          public void copy(Path src, Path dst) throws IOException {
+              try (InputStream in = Files.newInputStream(src);
+                   OutputStream out = Files.newOutputStream(dst)) {
+                  in.transferTo(out);
+              }
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: java_threadlocal_not_cleared
+  meta:
+    language: java
+    polarity: bug
+    mechanism: threadlocal_leak_pool
+    lineage: lin_threadlocal_v1
+    split: dev
+    trap: concurrency
+    defect_class: concurrency
+    fingerprint: fp_2ad092ebc1404510
+    critical: false
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: request-scoped tenant must not leak across pooled threads.
+
+      ```java
+      public final class TenantContext {
+          private static final ThreadLocal<String> TENANT = new ThreadLocal<>();
+          public static void set(String tenantId) { TENANT.set(tenantId); }
+          public static String get() { return TENANT.get(); }
+      }
+      public final class TenantFilter implements Filter {
+          public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+                  throws IOException, ServletException {
+              TenantContext.set(req.getParameter("tenant"));
+              chain.doFilter(req, res);
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - ThreadLocal
+      - doFilter
+      permitted_findings:
+      - ThreadLocal
+      - leak
+      - clear
+      - remove
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: java_clean_optional_chain
+  meta:
+    language: java
+    polarity: clean
+    mechanism: clean_java_try_resources
+    lineage: lin_clean_java_try_v2
+    split: holdout
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_9a69171a30226d67
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: read file text; resources closed on all paths via try-with-resources.
+
+      ```java
+      public final class TextFiles {
+          public String read(Path path) throws IOException {
+              try (BufferedReader br = Files.newBufferedReader(path)) {
+                  return br.lines().collect(Collectors.joining("\n"));
+              }
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: cs_deserial_type_name_handling
+  meta:
+    language: csharp
+    polarity: bug
+    mechanism: newtonsoft_typename_handling
+    lineage: lin_cs_typename_v1
+    split: train
+    trap: security
+    defect_class: security
+    fingerprint: fp_e28cc4bd90b1f834
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: JSON from clients must not allow polymorphic type-name gadgets.
+
+      ```csharp
+      public sealed class PayloadParser {
+          public T Parse<T>(string json) {
+              var settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
+              return JsonConvert.DeserializeObject<T>(json, settings)!;
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - TypeNameHandling.All
+      - DeserializeObject
+      permitted_findings:
+      - typename
+      - deser
+      - gadget
+      - rce
+      severity_bounds:
+        min: critical
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: cs_string_concat_log_forging
+  meta:
+    language: csharp
+    polarity: bug
+    mechanism: log_forging_crlf
+    lineage: lin_log_forge_v1
+    split: dev
+    trap: security
+    defect_class: security
+    fingerprint: fp_a5d44e13d1cba305
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: log lines must not allow CRLF injection from user input.
+
+      ```csharp
+      public sealed class AuditLog {
+          private readonly TextWriter _w;
+          public AuditLog(TextWriter w) => _w = w;
+          public void UserAction(string userId, string action) {
+              _w.WriteLine("user=" + userId + " action=" + action);
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - WriteLine
+      - userId
+      permitted_findings:
+      - crlf
+      - log
+      - forging
+      - newline
+      severity_bounds:
+        min: medium
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: cs_async_void_event_exception
+  meta:
+    language: csharp
+    polarity: bug
+    mechanism: async_void_event_handler
+    lineage: lin_async_void_evt_v1
+    split: holdout
+    trap: framework_semantic
+    defect_class: error_handling
+    fingerprint: fp_c350565e80760581
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: save failures must surface observably, not be lost on async void.
+
+      ```csharp
+      public sealed class SaveButton {
+          private readonly IStore _store;
+          public SaveButton(IStore store) => _store = store;
+          public async void OnClick(object sender, EventArgs e) {
+              await _store.SaveAsync(CurrentDocument);
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - async void
+      - SaveAsync
+      permitted_findings:
+      - async void
+      - exception
+      - event
+      - async
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated|async void|exception
+- id: cs_clean_httpclient_static
+  meta:
+    language: csharp
+    polarity: clean
+    mechanism: clean_cs_httpclient_reuse
+    lineage: lin_clean_cs_http_v1
+    split: train
+    trap: adversarial_clean
+    defect_class: clean
+    fingerprint: fp_1b2fc3f552d73568
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: reuse a single HttpClient. This uses a static client.
+
+      ```csharp
+      public sealed class ApiClient {
+          private static readonly HttpClient Http = new HttpClient();
+          public Task<string> GetAsync(string url) => Http.GetStringAsync(url);
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: cs_path_combine_absolute
+  meta:
+    language: csharp
+    polarity: bug
+    mechanism: path_combine_override
+    lineage: lin_path_combine_v1
+    split: holdout
+    trap: security
+    defect_class: security
+    fingerprint: fp_ec05e998dd85667d
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: resolved paths must remain under contentRoot even if name is absolute.
+
+      ```csharp
+      public sealed class ContentStore {
+          private readonly string _root;
+          public ContentStore(string root) => _root = root;
+          public string Resolve(string name) => Path.Combine(_root, name);
+          public byte[] Read(string name) => File.ReadAllBytes(Resolve(name));
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - Path.Combine
+      - _root
+      permitted_findings:
+      - Combine
+      - absolute
+      - rooted
+      - escape
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: cs_regex_dos_user_pattern
+  meta:
+    language: csharp
+    polarity: bug
+    mechanism: regex_dos_user_pattern
+    lineage: lin_redos_cs_v1
+    split: dev
+    trap: security
+    defect_class: security
+    fingerprint: fp_dff6fc813a7c57db
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: user-supplied regex must not enable catastrophic backtracking DoS.
+
+      ```csharp
+      public sealed class FilterEngine {
+          public bool Matches(string userPattern, string input) {
+              var re = new Regex(userPattern);
+              return re.IsMatch(input);
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - new Regex(userPattern)
+      - IsMatch
+      permitted_findings:
+      - redos
+      - backtracking
+      - timeout
+      - regex
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: cs_clean_async_task_return
+  meta:
+    language: csharp
+    polarity: clean
+    mechanism: clean_cs_task_forward
+    lineage: lin_clean_cs_task_v2
+    split: holdout
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_afd33762bfce1b2d
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: save failures surface via Task. Returning Task from a forwarder is correct (not async void).
+
+      ```csharp
+      public sealed class DocSaver {
+          private readonly IStore _store;
+          public DocSaver(IStore store) => _store = store;
+          public Task SaveAsync(Document doc) => _store.SaveAsync(doc);
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: rs_mem_transmute_alias
+  meta:
+    language: rust
+    polarity: bug
+    mechanism: unsafe_transmute_alias
+    lineage: lin_transmute_v1
+    split: train
+    trap: framework_semantic
+    defect_class: framework_semantic
+    fingerprint: fp_8e4a257c51a524bf
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: bytes_to_u32_slice must uphold alignment safety.
+
+      ```rust
+      pub fn bytes_to_u32_slice(bytes: &[u8]) -> &[u32] {
+          unsafe {
+              std::slice::from_raw_parts(bytes.as_ptr() as *const u32, bytes.len() / 4)
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - from_raw_parts
+      - as *const u32
+      permitted_findings:
+      - align
+      - unsafe
+      - ub
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: rs_send_rc_across_await
+  meta:
+    language: rust
+    polarity: bug
+    mechanism: rc_not_send_async
+    lineage: lin_rc_send_v1
+    split: dev
+    trap: concurrency
+    defect_class: concurrency
+    fingerprint: fp_fd6efa7a911e05ff
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: async task may run on multi-threaded runtime; shared state must be Send+Sync.
+
+      ```rust
+      use std::rc::Rc;
+      use std::cell::RefCell;
+
+      pub struct State { pub hits: Rc<RefCell<u64>> }
+
+      pub async fn bump(state: State) {
+          *state.hits.borrow_mut() += 1;
+          tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+          *state.hits.borrow_mut() += 1;
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - Rc<RefCell
+      permitted_findings:
+      - Send
+      - Rc
+      - RefCell
+      - async
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: rs_file_permissions_world_writable
+  meta:
+    language: rust
+    polarity: bug
+    mechanism: world_writable_secret_file
+    lineage: lin_rs_perm_v1
+    split: holdout
+    trap: security
+    defect_class: security
+    fingerprint: fp_b6e76ce1c7001f58
+    critical: true
+    security_tenant: true
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: secret material on disk must not be world-readable/writable.
+
+      ```rust
+      pub fn write_secret(path: &Path, secret: &[u8]) -> std::io::Result<()> {
+          use std::fs::OpenOptions;
+          let mut f = OpenOptions::new().create(true).write(true).mode(0o666).open(path)?;
+          f.write_all(secret)?;
+          Ok(())
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - 0o666
+      - write_secret
+      permitted_findings:
+      - permission
+      - mode
+      - world
+      - secret
+      severity_bounds:
+        min: high
+        max: critical
+      witness:
+        must_match:
+        - (?i)contract violated
+      security_tenant_control: true
+- id: rs_clean_arc_mutex
+  meta:
+    language: rust
+    polarity: clean
+    mechanism: clean_rs_parse_vec
+    lineage: lin_clean_rs_parse_vec_v1
+    split: train
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_1679407d65cf1192
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: invalid entries return Err, not panic. Propagating Result with `?` is correct.
+
+      ```rust
+      pub fn parse_all(vals: &[&str]) -> Result<Vec<u16>, std::num::ParseIntError> {
+          let mut out = Vec::with_capacity(vals.len());
+          for v in vals {
+              out.push(v.parse::<u16>()?);
+          }
+          Ok(out)
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated
+- id: rs_integer_cast_truncation
+  meta:
+    language: rust
+    polarity: bug
+    mechanism: integer_cast_truncation
+    lineage: lin_cast_trunc_v1
+    split: dev
+    trap: logic
+    defect_class: logic
+    fingerprint: fp_7f6f4077085b53c7
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: user-controlled u64 offsets must not silently truncate to usize.
+
+      ```rust
+      pub fn page_ptr(base: usize, offset: u64) -> usize {
+          base + (offset as usize)
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - offset as usize
+      - base +
+      permitted_findings:
+      - truncat
+      - overflow
+      - cast
+      - offset
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: rs_drop_order_file_lock
+  meta:
+    language: rust
+    polarity: bug
+    mechanism: drop_order_unlock_before_flush
+    lineage: lin_drop_order_v1
+    split: holdout
+    trap: resource
+    defect_class: resource_leak
+    fingerprint: fp_312ea538c5d40c5b
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: file data must be flushed while the exclusive lock is still held.
+
+      ```rust
+      pub struct LockedFile {
+          file: File,
+          _lock: FileLock,
+      }
+
+      impl LockedFile {
+          pub fn write_all(&mut self, data: &[u8]) -> io::Result<()> {
+              self.file.write_all(data)?;
+              Ok(())
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: has_bug
+      required_evidence_spans:
+      - write_all
+      permitted_findings:
+      - flush
+      - sync
+      - lock
+      - partial
+      severity_bounds:
+        min: medium
+        max: high
+      witness:
+        must_match:
+        - (?i)contract violated
+- id: rs_clean_try_from
+  meta:
+    language: rust
+    polarity: clean
+    mechanism: clean_rs_try_from_port
+    lineage: lin_clean_rs_tryfrom_v2
+    split: holdout
+    trap: true_clean
+    defect_class: clean
+    fingerprint: fp_d94b1ba67a43de5f
+    critical: false
+    security_tenant: false
+    mode: snippet
+  vars:
+    user: |
+      Audit the following code for bugs (snippet mode).
+      Requirement: convert u32 to Port or return an error. try_from returning Result is correct; error message wording is not a bug.
+
+      ```rust
+      pub struct Port(u16);
+      impl TryFrom<u32> for Port {
+          type Error = &'static str;
+          fn try_from(v: u32) -> Result<Self, Self::Error> {
+              u16::try_from(v).map(Port).map_err(|_| "port out of range")
+          }
+      }
+      ```
+  assertions:
+  - type: bug_audit_oracle
+    id: hidden_oracle
+    hard: true
+    required: true
+    weight: 2.0
+    value:
+      expected_verdict: clean
+      clean_control: true
+      witness:
+        must_match:
+        - (?i)no real bug|no confirmed bug
+        must_not_match:
+        - (?i)contract violated

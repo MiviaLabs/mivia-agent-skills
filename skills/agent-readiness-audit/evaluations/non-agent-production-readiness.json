@@ -1,12 +1,12 @@
 {
-  "name": "general production readiness does not activate agent readiness audit",
+  "name": "generic production readiness does not activate",
   "should_trigger": false,
   "input": {
-    "request": "Assess whether this service is secure and ready for production deployment. Review authentication, dependencies, observability, and operational risks.",
-    "context": "The request does not ask whether coding-agent actions are permitted or enforced."
+    "request": "Is this service production ready for launch next week?",
+    "context": "Question is about ops/release readiness, not coding-agent actions."
   },
   "expected_behavior": [
-    "do not activate the agent readiness audit",
-    "route to a security or production-readiness workflow as appropriate"
+    "do not treat this as agent-readiness-audit",
+    "do not invent agent control-plane conclusions from app health alone"
   ]
 }

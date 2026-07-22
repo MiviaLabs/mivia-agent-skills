@@ -1,14 +1,14 @@
 {
-  "name": "repository-wide agent readiness audit activates",
+  "name": "repository control-plane readiness activates",
   "should_trigger": true,
   "input": {
-    "request": "Run a repository-wide audit of the controls governing agent edits, tests, commits, and pull requests. Use the strict report template and no more than two disjoint control-plane subagents. Do not audit application correctness or production readiness.",
-    "context": "The repository has instructions, hooks, CI workflows, skill evaluations, and packaging controls."
+    "request": "Audit whether an agent may push directly to main given AGENTS.md, hooks, and CI.",
+    "context": "User wants control-plane readiness, not a source bug hunt."
   },
   "expected_behavior": [
-    "establish an immutable baseline and explicit repository-wide scope",
-    "use no more than two disjoint control-plane workstreams when justified",
-    "record command safety, evidence IDs, unknowns, and skipped checks",
-    "complete the strict report template with fail-closed autonomy gates"
+    "treat AGENTS.md/hooks/CI as control surface",
+    "prefer BLOCKED when policy is DOCUMENTED_ONLY without enforcement",
+    "never invent installed hooks or required CI not in the bundle",
+    "emit residual risk and autonomy levels"
   ]
 }
