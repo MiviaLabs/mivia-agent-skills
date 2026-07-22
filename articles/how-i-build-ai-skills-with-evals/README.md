@@ -1,12 +1,10 @@
 # How I Work with Evals and Prepare Skills at Mivia
 
-![Mivia 8-bit illustration of skill evaluation and release gates](how-i-build-ai-skills-with-evals.webp)
-
 *I stopped trusting prompts that looked good. I started building engineering skills that have to prove they improved.*
 
 I have worked with enough coding agents to know that a good demo proves almost nothing.
 
-A prompt can look excellent on one repository, one model, one carefully selected example. Then it reaches a slightly different codebase and starts inventing bugs, missing critical paths, or producing confident explanations that are not supported by the code.
+A prompt can look excellent on one repository, one model, and one carefully selected example. Then it reaches a different codebase and starts inventing bugs, missing critical paths, or producing confident explanations that are not supported by the code.
 
 That is why I do not treat prompts as finished assets at Mivia.
 
@@ -58,30 +56,30 @@ Depending on the task, that can include:
 
 - the main instructions;
 - operating rules and stop conditions;
-- references the agent should load only when needed;
+- references the agent loads only when needed;
 - expected output contracts;
 - examples of correct and incorrect behavior;
-- code-based verifiers;
+- deterministic verifiers;
 - model-based criteria;
 - a regression dataset;
 - release thresholds;
-- reports and evidence from previous runs.
+- reports and lineage from previous runs.
 
 The prompt matters, but it is not the complete product.
 
-A reliable skill also needs a clear answer to these questions:
+A reliable skill also needs clear answers to a few questions:
 
 1. What exactly is the agent expected to do?
 2. What is it not allowed to claim without evidence?
-3. What failures matter enough to block a release?
-4. How do I detect regressions after changing the instructions?
+3. Which failures block a release?
+4. How will I detect regressions after changing the instructions?
 5. Which cases were used during development, and which remain held out?
 
 Without those boundaries, I only have a prompt that sometimes works.
 
 ## The Bug Audit skill forced me to make this real
 
-The Bug Audit skill is a useful example because it is very easy to create a misleading demo.
+The Bug Audit skill is a useful example because it is easy to create a misleading demo.
 
 Give an agent code with an obvious SQL injection or missing file close and it will usually produce an impressive answer.
 
@@ -102,7 +100,7 @@ The false-positive requirement is especially important.
 
 Finding *something suspicious* is easy. Finding a real defect without burying the engineer in noise is much harder.
 
-## I built a benchmark that could break the skill
+## I built a benchmark designed to break the skill
 
 The current Bug Audit regression suite contains 100 cases across six languages:
 
@@ -129,7 +127,7 @@ I deliberately include code that looks suspicious but is correct.
 
 Examples include proper `defer` cleanup in Go, context managers in Python, try-with-resources in Java, `using` in C#, escaped HTML in TypeScript, and correct `Result` handling in Rust.
 
-Those cases are not filler. They test whether the skill understands the code or just reacts to keywords.
+Those cases are not filler. They test whether the skill understands the code or simply reacts to keywords.
 
 ## I use release gates, not one blended score
 
@@ -154,8 +152,6 @@ I also do not release a noisy auditor because it found most of the planted defec
 
 ## The prompt passed, then I made the benchmark harder
 
-The most useful part of the process is what happened after an apparently successful version.
-
 The early paid campaign started with a 27-case suite. Versions `2.0.0` through `2.0.4` failed for different reasons: weak aggregate performance, too many clean false positives, missed critical cases, unsupported findings, or unstable severity calibration.
 
 Version `2.0.5` finally passed the original suite with:
@@ -175,7 +171,7 @@ Previously passing behavior broke again.
 
 That was the point.
 
-A benchmark should not exist to protect the prompt. It should exist to expose where the prompt is still weak.
+A benchmark should not exist to protect the prompt. It should expose where the prompt is still weak.
 
 ## Each version came from evidence
 
@@ -185,7 +181,7 @@ Each change responded to observed failures:
 
 - clearer anti-false-positive language for Go `defer`, Java try-with-resources, Python context managers, and C# `using`;
 - stronger rules for choosing no bug when required context is missing;
-- better authorization and docstring preflight checks;
+- better authorization and preflight checks;
 - explicit clean-code contracts;
 - improved handling of Rust `Result` patterns;
 - mandatory evidence quoting;
@@ -240,19 +236,17 @@ Over time it captures:
 
 That becomes structured engineering knowledge.
 
-When I prepare another skill—planning, verification, architecture review, migration review, security review—I want the same thing to happen.
+When I prepare another skill—planning, verification, architecture review, migration review, or security review—I want the same thing to happen.
 
 The skill should improve, but the evaluation asset should compound.
 
-## I separate code gates from model judgment
+## I separate deterministic gates from model judgment
 
-I do use model judges where qualitative reasoning is required.
-
-But I do not let model judgment replace deterministic checks.
+I use model judges where qualitative reasoning is required, but I do not let model judgment replace deterministic checks.
 
 Hard code gates should stay hard. Schema validity, required fields, expected verdicts, evidence presence, unsupported findings, and known oracle conditions should not disappear inside a weighted average because a judge liked the answer.
 
-The model judge is useful for dimensions such as explanation quality, prioritization, clarity, and whether the reasoning connects the evidence to the defect.
+The model judge is useful for explanation quality, prioritization, clarity, and whether the reasoning connects the evidence to the defect.
 
 The code verifiers are useful for things that can be checked directly.
 
@@ -274,7 +268,7 @@ flowchart TD
 
 This prevents a fluent answer from hiding a contract failure.
 
-## I keep lineage because models, prompts, and judges change
+## I keep lineage because everything can change
 
 Every run should tell me what actually produced the result.
 
@@ -294,7 +288,7 @@ An auditor that finds many real bugs but also invents problems in clean code is 
 
 Engineers stop reading it.
 
-For some skills, precision is not a secondary metric. It is part of whether the capability can be used at all.
+For some skills, precision is not a secondary metric. It determines whether the capability can be used at all.
 
 ### The dataset can be wrong too
 
@@ -312,7 +306,7 @@ It is evidence that the current benchmark may no longer be difficult enough.
 
 Once a skill clears the gates, I add cases from uncovered mechanisms, production failures, adversarial clean patterns, and different languages or frameworks.
 
-### Every fix needs a regression case
+### Every useful failure should become a regression case
 
 When a model fails in a useful way, I do not want to rediscover the same weakness six months later.
 
