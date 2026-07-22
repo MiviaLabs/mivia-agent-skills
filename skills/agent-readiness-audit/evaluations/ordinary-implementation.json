@@ -1,12 +1,12 @@
 {
-  "name": "ordinary implementation does not activate agent readiness audit",
+  "name": "ordinary implementation does not activate readiness audit",
   "should_trigger": false,
   "input": {
-    "request": "Implement the new endpoint, add the normal unit test, and verify the change.",
-    "context": "No agent guardrail, permission, autonomy, or control-plane review was requested."
+    "request": "Implement the missing unit tests for the parser and open a PR.",
+    "context": "No question about agent permissions or guardrails."
   },
   "expected_behavior": [
-    "use the normal engineering and verification workflows",
-    "do not run an agent-readiness audit"
+    "do not run agent-readiness-audit as the primary skill",
+    "prefer implementation and verify-code-change workflows"
   ]
 }

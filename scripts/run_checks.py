@@ -19,6 +19,7 @@ REPOSITORY_CHECKS = (
     ("example tests", "tooling/test_examples.py"),
     ("check runner tests", "tooling/test_run_checks.py"),
     ("bug audit tests", "tooling/test_bug_audit.py"),
+    ("agent readiness audit tests", "tooling/test_agent_readiness_audit.py"),
     ("distribution tests", "tooling/test_distribution.py"),
     ("project bootstrap tests", "tooling/test_project_bootstrap.py"),
     ("packaging tests", "tooling/test_packaging.py"),

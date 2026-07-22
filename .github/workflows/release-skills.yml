@@ -21,6 +21,7 @@ jobs:
       - run: python tooling/test_examples.py
       - run: python tooling/test_distribution.py
       - run: python tooling/test_bug_audit.py
+      - run: python tooling/test_agent_readiness_audit.py
       - run: python tooling/test_packaging.py
       - run: python scripts/package_claude_skills.py --output dist
       - env:

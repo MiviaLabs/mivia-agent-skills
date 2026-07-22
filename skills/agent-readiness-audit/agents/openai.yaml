@@ -1,6 +1,6 @@
 interface:
   display_name: "Agent Readiness Audit"
-  short_description: "Audit controls governing coding-agent actions"
-  default_prompt: "Use $agent-readiness-audit to assess this repository's evidence-backed controls for named coding-agent actions."
+  short_description: "Control-plane audit: may agents take this action?"
+  default_prompt: "Use $agent-readiness-audit to assess control-plane evidence for the named coding-agent action."
 policy:
   allow_implicit_invocation: true

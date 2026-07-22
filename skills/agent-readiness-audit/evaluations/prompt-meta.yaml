@@ -1,0 +1,9 @@
+id: agent_readiness_audit
+version: "2.0.3"
+description: >-
+  vs 2.0.2: never ENFORCED for policy text alone; read-only allowed scripts
+  get SUPPORTED_WITHIN_SCOPE. Oracle/gate soften for true-allow underclaim vs
+  adversarial overclaim. Paid 100-case release-gates winner.
+immutable: true
+source: mivia-evals/prompts/agent_readiness_audit/2.0.3
+paid_run_id: "20260722T080023Z-6bb8461d"

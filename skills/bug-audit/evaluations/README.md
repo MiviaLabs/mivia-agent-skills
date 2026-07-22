@@ -53,3 +53,13 @@ Source references:
 - Suite: `/home/mac/mivialabs/mivia-evals/suites/bug_audit_regression.yaml`
 - Splits: `/home/mac/mivialabs/mivia-evals/campaigns/bug_audit/splits.yaml`
 - Results: `/home/mac/mivialabs/mivia-evals/campaigns/bug_audit/PAID_EVAL_RESULTS.md`
+
+## Vendored dataset
+
+Local packaging copies (from mivia-evals):
+
+- `datasets/suite.yaml`
+- `datasets/splits.yaml`
+- `datasets/mock_by_case_id.json`
+
+See `datasets/README.md`.
